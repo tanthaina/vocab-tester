@@ -394,6 +394,25 @@ if (fullscreenBtn) {
     });
 }
 
+// QR Code Modal Logic
+const showQrBtn = document.getElementById('showQrBtn');
+const qrModal = document.getElementById('qrModal');
+const closeQrBtn = document.getElementById('closeQrBtn');
+
+if (showQrBtn && qrModal && closeQrBtn) {
+    showQrBtn.addEventListener('click', () => {
+        qrModal.style.display = 'flex';
+    });
+    closeQrBtn.addEventListener('click', () => {
+        qrModal.style.display = 'none';
+    });
+    window.addEventListener('click', (e) => {
+        if (e.target === qrModal) {
+            qrModal.style.display = 'none';
+        }
+    });
+}
+
 modeImageBtn.addEventListener('click', () => {
     restoreMainUI();
     isImageMode = true;
