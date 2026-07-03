@@ -938,10 +938,13 @@ restoreMainUI = function() {
     
     // Put speech container back to flashcard mode
     const speechContainer = document.getElementById('speechContainer');
-    const flashcardApp = document.getElementById('flashcardApp');
-    const navDiv = flashcardApp.querySelector('.navigation');
-    if (speechContainer && navDiv) {
-        flashcardApp.insertBefore(speechContainer, navDiv);
+    const flashcardSideArea = document.querySelector('.flashcard-side-area');
+    
+    if (speechContainer && flashcardSideArea) {
+        flashcardSideArea.appendChild(speechContainer);
+    } else if (speechContainer) {
+        const flashcardApp = document.getElementById('flashcardApp');
+        if (flashcardApp) flashcardApp.appendChild(speechContainer);
     }
     
     originalRestoreMainUI3();
