@@ -600,7 +600,7 @@ function renderTeachingMode() {
                     <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>
                 </svg>
             </div>
-            <img src="${imgPath}" class="tc-image" alt="${item.en}" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'150\\' height=\\'150\\'><rect width=\\'150\\' height=\\'150\\' fill=\\'%23eee\\'/><text x=\\'50%\\' y=\\'50%\\' dominant-baseline=\\'middle\\' text-anchor=\\'middle\\' font-size=\\'20\\'>No Image</text></svg>'">
+            <img src="${imgPath}" class="tc-image" alt="${item.en}" style="cursor: pointer;" onclick="speakWord('${item.en.replace(/'/g, "\\'")}')" title="คลิกรูปเพื่อฟังเสียง" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'150\\' height=\\'150\\'><rect width=\\'150\\' height=\\'150\\' fill=\\'%23eee\\'/><text x=\\'50%\\' y=\\'50%\\' dominant-baseline=\\'middle\\' text-anchor=\\'middle\\' font-size=\\'20\\'>No Image</text></svg>'">
             <div class="tc-en">${item.en}</div>
             <div class="tc-th">${item.th}</div>
             <div class="tc-pron">/ ${item.pron} /</div>
