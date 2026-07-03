@@ -181,11 +181,26 @@ function updateUI() {
     nextBtn.disabled = currentIndex === currentDeck.length - 1;
 }
 
+function resetSpeechUI() {
+    scoreBreakdown.style.display = 'none';
+    heardWord.innerText = '';
+    scoreCorrect.innerText = '0/2';
+    scoreAccent.innerText = '0/2';
+    scoreFluency.innerText = '0/1';
+    wordScoreTotal.innerText = '0';
+    if (isRecording) {
+        speechStatus.innerText = "กำลังฟังเสียง... (พูดเลย)";
+    } else {
+        speechStatus.innerText = "กดปุ่มไมค์แล้วพูดคำศัพท์ภาษาอังกฤษ";
+    }
+}
+
 function nextCard() {
     if (currentIndex < currentDeck.length - 1) {
         currentIndex++;
         isFlipped = false;
         flashcard.classList.remove('flipped');
+        resetSpeechUI();
         setTimeout(() => {
             renderCard();
             updateUI();
@@ -198,12 +213,14 @@ function prevCard() {
         currentIndex--;
         isFlipped = false;
         flashcard.classList.remove('flipped');
+        resetSpeechUI();
         setTimeout(() => {
             renderCard();
             updateUI();
         }, 150);
     }
 }
+
 
 function flipCard() {
     isFlipped = !isFlipped;

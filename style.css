@@ -163,6 +163,36 @@ header p {
     box-shadow: 0 2px 4px rgba(0,0,0,0.05);
     border: 1px solid #FDE68A;
 }
+/* Layout Wrapper for Side-by-Side */
+.flashcard-layout-wrapper {
+    display: flex;
+    gap: 30px;
+    align-items: flex-start;
+    margin-bottom: 20px;
+}
+
+.flashcard-main-area {
+    flex: 7;
+}
+
+.flashcard-side-area {
+    flex: 3;
+    position: sticky;
+    top: 20px;
+}
+
+@media (max-width: 1024px) {
+    .flashcard-layout-wrapper {
+        flex-direction: column;
+    }
+    .flashcard-main-area, .flashcard-side-area {
+        width: 100%;
+        flex: none;
+    }
+    .flashcard-side-area {
+        position: static;
+    }
+}
 
 /* Flashcard */
 .flashcard-container {

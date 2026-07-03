@@ -41,66 +41,73 @@
                 <div class="total-score-badge" id="totalScoreBadge">⭐ รวม: 0 คะแนน</div>
             </div>
 
-            <div class="flashcard-container">
-                <div class="flashcard" id="flashcard">
-                    <div class="card-front" id="cardFront">
-                        <!-- Content injected via JS -->
+            <div class="flashcard-layout-wrapper">
+                <!-- Left Area: Flashcard & Navigation -->
+                <div class="flashcard-main-area">
+                    <div class="flashcard-container">
+                        <div class="flashcard" id="flashcard">
+                            <div class="card-front" id="cardFront">
+                                <!-- Content injected via JS -->
+                            </div>
+                            <div class="card-back" id="cardBack">
+                                <!-- Content injected via JS -->
+                            </div>
+                        </div>
                     </div>
-                    <div class="card-back" id="cardBack">
-                        <!-- Content injected via JS -->
+
+                    <div class="navigation">
+                        <button class="nav-btn" id="prevBtn">
+                            <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                            ก่อนหน้า
+                        </button>
+                        <button class="reveal-btn" id="revealBtn">เฉลย (Spacebar)</button>
+                        <button class="nav-btn" id="nextBtn">
+                            ถัดไป
+                            <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                        </button>
+                    </div>
+                    
+                    <div style="text-align: center; margin-top: 15px;">
+                        <button class="primary-btn" id="shuffleBtn">
+                            <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 3 21 3 21 8"></polyline><line x1="4" y1="20" x2="21" y2="3"></line><polyline points="21 16 21 21 16 21"></polyline><line x1="15" y1="15" x2="21" y2="21"></line><line x1="4" y1="4" x2="9" y2="9"></line></svg>
+                            สุ่มสลับตำแหน่ง (Shuffle)
+                        </button>
                     </div>
                 </div>
-            </div>
 
-            <!-- Speech Recognition UI -->
-            <div class="speech-container" id="speechContainer">
-                <button class="mic-btn" id="micBtn" title="กดเพื่อออกเสียง">
-                    <svg viewBox="0 0 24 24" width="32" height="32" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"></path>
-                        <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
-                        <line x1="12" y1="19" x2="12" y2="23"></line>
-                        <line x1="8" y1="23" x2="16" y2="23"></line>
-                    </svg>
-                </button>
-                <div class="speech-status" id="speechStatus">กดปุ่มไมค์แล้วพูดคำศัพท์ภาษาอังกฤษ</div>
-                
-                <div class="score-breakdown" id="scoreBreakdown" style="display: none;">
-                    <div class="score-total-large"><span id="wordScoreTotal">0</span>/5</div>
-                    <div class="score-details">
-                        <div class="score-row">
-                            <span>✅ ความถูกต้อง (Correctness):</span>
-                            <span class="score-val" id="scoreCorrect">0/2</span>
-                        </div>
-                        <div class="score-row">
-                            <span>🗣️ สำเนียง (Accent/Clarity):</span>
-                            <span class="score-val" id="scoreAccent">0/2</span>
-                        </div>
-                        <div class="score-row">
-                            <span>🌊 ความลื่นไหล (Fluency):</span>
-                            <span class="score-val" id="scoreFluency">0/1</span>
+                <!-- Right Area: Speech & Score -->
+                <div class="flashcard-side-area">
+                    <div class="speech-container" id="speechContainer">
+                        <button class="mic-btn" id="micBtn" title="กดเพื่อออกเสียง">
+                            <svg viewBox="0 0 24 24" width="32" height="32" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"></path>
+                                <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                                <line x1="12" y1="19" x2="12" y2="23"></line>
+                                <line x1="8" y1="23" x2="16" y2="23"></line>
+                            </svg>
+                        </button>
+                        <div class="speech-status" id="speechStatus">กดปุ่มไมค์แล้วพูดคำศัพท์ภาษาอังกฤษ</div>
+                        
+                        <div class="score-breakdown" id="scoreBreakdown" style="display: none;">
+                            <div class="score-total-large"><span id="wordScoreTotal">0</span>/5</div>
+                            <div class="score-details">
+                                <div class="score-row">
+                                    <span>✅ ความถูกต้อง (Correctness):</span>
+                                    <span class="score-val" id="scoreCorrect">0/2</span>
+                                </div>
+                                <div class="score-row">
+                                    <span>🗣️ สำเนียง (Accent/Clarity):</span>
+                                    <span class="score-val" id="scoreAccent">0/2</span>
+                                </div>
+                                <div class="score-row">
+                                    <span>🌊 ความลื่นไหล (Fluency):</span>
+                                    <span class="score-val" id="scoreFluency">0/1</span>
+                                </div>
+                            </div>
+                            <div class="transcript-result">AI ได้ยินว่า: "<span id="heardWord"></span>"</div>
                         </div>
                     </div>
-                    <div class="transcript-result">AI ได้ยินว่า: "<span id="heardWord"></span>"</div>
                 </div>
-            </div>
-
-            <div class="navigation">
-                <button class="nav-btn" id="prevBtn">
-                    <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none"><polyline points="15 18 9 12 15 6"></polyline></svg>
-                    ก่อนหน้า
-                </button>
-                <button class="reveal-btn" id="revealBtn">เฉลย (Spacebar)</button>
-                <button class="nav-btn" id="nextBtn">
-                    ถัดไป
-                    <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none"><polyline points="9 18 15 12 9 6"></polyline></svg>
-                </button>
-            </div>
-            
-            <div style="text-align: center; margin-top: 20px;">
-                <button class="primary-btn" id="shuffleBtn">
-                    <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 3 21 3 21 8"></polyline><line x1="4" y1="20" x2="21" y2="3"></line><polyline points="21 16 21 21 16 21"></polyline><line x1="15" y1="15" x2="21" y2="21"></line><line x1="4" y1="4" x2="9" y2="9"></line></svg>
-                    สุ่มสลับตำแหน่ง (Shuffle)
-                </button>
             </div>
         </main>
         
