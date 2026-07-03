@@ -1,4 +1,11 @@
-
+// --- iOS Safari Voice Loading Bug Fix ---
+let globalVoices = [];
+if ('speechSynthesis' in window) {
+    window.speechSynthesis.onvoiceschanged = () => {
+        globalVoices = window.speechSynthesis.getVoices();
+    };
+    globalVoices = window.speechSynthesis.getVoices();
+}
 
 let currentCategory = "vegetables";
 let currentDeck = [...categoriesData[currentCategory].items];
@@ -650,12 +657,16 @@ function speakWord(text) {
         utterance.lang = 'en-US';
         utterance.rate = 0.9; // slightly slower for students
         
-        const voices = window.speechSynthesis.getVoices();
+        let voices = window.speechSynthesis.getVoices();
+        if (voices.length === 0 && typeof globalVoices !== 'undefined') voices = globalVoices;
+        
         let enVoice = voices.find(v => v.lang.startsWith('en') && (v.name.includes('Google') || v.name.includes('Siri') || v.name.includes('Samantha')));
         if (!enVoice) enVoice = voices.find(v => v.lang.startsWith('en'));
         
         if (enVoice) {
             utterance.voice = enVoice;
+        } else {
+            utterance.lang = 'en-US';
         }
         
         window.speechSynthesis.speak(utterance);
@@ -927,12 +938,16 @@ function speakWord(text) {
         utterance.lang = 'en-US';
         utterance.rate = 0.9; // Slightly slower for clearer pronunciation
         
-        const voices = window.speechSynthesis.getVoices();
+        let voices = window.speechSynthesis.getVoices();
+        if (voices.length === 0 && typeof globalVoices !== 'undefined') voices = globalVoices;
+        
         let enVoice = voices.find(v => v.lang.startsWith('en') && (v.name.includes('Google') || v.name.includes('Siri') || v.name.includes('Samantha')));
         if (!enVoice) enVoice = voices.find(v => v.lang.startsWith('en'));
         
         if (enVoice) {
             utterance.voice = enVoice;
+        } else {
+            utterance.lang = 'en-US';
         }
         
         window.speechSynthesis.speak(utterance);
