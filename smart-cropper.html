@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Smart Cropper V3 (Individual Boxes)</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f0f2f5; margin: 0; padding: 20px; color: #333; }
+        .container { max-width: 1200px; margin: 0 auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 8px 16px rgba(0,0,0,0.1); }
+        h1 { margin-top: 0; color: #1a73e8; display: flex; align-items: center; gap: 10px; }
+        .controls-card { background: #e8f0fe; padding: 20px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #d2e3fc; }
+        .flex-row { display: flex; gap: 15px; align-items: flex-end; flex-wrap: wrap; margin-bottom: 15px; }
+        .input-group { display: flex; flex-direction: column; gap: 5px; }
+        .input-group label { font-weight: 600; font-size: 0.9rem; color: #5f6368; }
+        input[type="number"], input[type="file"] { padding: 8px 12px; border: 1px solid #ccc; border-radius: 4px; font-size: 1rem; }
+        input[type="number"] { width: 80px; }
+        button { padding: 10px 16px; border: none; border-radius: 4px; font-size: 0.95rem; font-weight: bold; cursor: pointer; transition: 0.2s; display: flex; align-items: center; gap: 5px; }
+        .btn-primary { background: #1a73e8; color: white; }
+        .btn-primary:hover { background: #1557b0; }
+        .btn-success { background: #34a853; color: white; }
+        .btn-success:hover { background: #2d8c47; }
+        .btn-danger { background: #ea4335; color: white; }
+        .btn-danger:hover { background: #d93025; }
+        .btn-warning { background: #fbbc04; color: #333; }
+        .btn-warning:hover { background: #e3a903; }
+        .btn-outline { background: white; border: 2px solid #1a73e8; color: #1a73e8; }
+        .btn-outline:hover { background: #e8f0fe; }
+        
+        .toolbar { display: flex; gap: 10px; margin-top: 15px; padding-top: 15px; border-top: 1px solid #d2e3fc; }
+        
+        .workspace {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background: #f8f9fa;
+            border: 2px dashed #dadce0;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+            overflow: auto;
+            max-height: 70vh;
+        }
+        
+        #interactiveCanvas {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            max-width: 100%;
+        }
+        
+        .preview-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 15px; margin-top: 30px; }
+        .crop-item { background: #fff; border: 1px solid #ddd; border-radius: 8px; padding: 10px; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .crop-item img { max-width: 100%; height: auto; border: 1px dashed #ccc; margin-bottom: 10px; }
+        .crop-item .file-name { font-weight: bold; margin-bottom: 10px; color: #555; }
+        
+        .header-actions {
+            display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #eee; padding-bottom: 10px; margin-top: 30px;
+        }
+        
+        .status-badge {
+            background: #e6f4ea; color: #137333; padding: 5px 10px; border-radius: 16px; font-size: 0.85rem; font-weight: bold; display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>✂️ Smart Cropper V3 (Individual Boxes)</h1>
+        
+        <div class="controls-card">
+            <div class="flex-row">
+                <div class="input-group">
+                    <label>1. เลือกรูปภาพหนังสือ</label>
+                    <input type="file" id="imageLoader" accept="image/*">
+                </div>
+                <div class="input-group">
+                    <label>2. แถว (Rows)</label>
+                    <input type="number" id="gridRows" value="5" min="1">
+                </div>
+                <div class="input-group">
+                    <label>3. คอลัมน์ (Cols)</label>
+                    <input type="number" id="gridCols" value="2" min="1">
+                </div>
+                <div class="input-group">
+                    <label>ชื่อไฟล์รูปแรกสุด (ID)</label>
+                    <input type="number" id="startId" value="1" min="1">
+                </div>
+                <button class="btn-primary" id="generateGridBtn" style="margin-bottom: 2px;">🤖 สร้างกล่องอัตโนมัติ</button>
+            </div>
+            
+            <div class="toolbar" id="toolbar" style="display: none; align-items: center; gap: 10px; flex-wrap: wrap;">
+                <button class="btn-outline" id="addBoxBtn">➕ เพิ่มกล่องใหม่</button>
+                <button class="btn-danger" id="deleteBoxBtn" disabled>🗑️ ลบกล่องที่เลือก (Delete)</button>
+                <button class="btn-warning" id="renumberBtn" style="padding: 6px 12px; font-size: 0.9rem;">🔢 รันเลขใหม่ทั้งหมด</button>
+                <div style="display: flex; align-items: center; gap: 5px; margin-left: auto; border-left: 2px solid #d2e3fc; padding-left: 15px;">
+                    <label style="font-weight: bold; font-size: 0.9rem; color: #5f6368;">แก้ชื่อไฟล์ (ID):</label>
+                    <input type="text" id="editBoxId" disabled style="width: 80px; padding: 5px 10px; border-radius: 4px; border: 1px solid #ccc; font-weight: bold;">
+                </div>
+            </div>
+            
+            <div style="background: #fff; padding: 15px; border-radius: 8px; font-size: 0.95rem; color: #444; border-left: 4px solid #fbbc04; margin-top: 15px;">
+                💡 <b>วิธีใช้งาน:</b> 
+                1. อัปโหลดรูป -> กด <b>สร้างกล่องอัตโนมัติ</b> <br>
+                2. <b>คลิกที่กล่องสีน้ำเงิน</b> เพื่อเลือกลากย้ายตำแหน่ง หรือดึงที่มุมกล่องเพื่อย่อขยายขนาด <br>
+                3. หากมีกล่องเกินมา ให้คลิกเลือกกล่องนั้นแล้วกด <b>ปุ่ม Delete</b> บนคีย์บอร์ด (หรือกดปุ่มลบกล่อง)
+            </div>
+        </div>
+
+        <!-- Interactive Workspace -->
+        <div class="workspace" id="workspace">
+            <div style="color: #888; text-align: center; padding: 40px;" id="placeholderText">
+                อัปโหลดรูปภาพเพื่อเริ่มการตัดรูป
+            </div>
+            <canvas id="interactiveCanvas" style="display: none;" tabindex="0"></canvas>
+        </div>
+
+        <div class="header-actions">
+            <h3 style="margin: 0; color: #333;">ตัวอย่างภาพที่หั่นเสร็จแล้ว</h3>
+            <div style="display: flex; gap: 10px; align-items: center;">
+                <span id="folderStatus" class="status-badge">✅ เลือกโฟลเดอร์แล้ว</span>
+                <button class="btn-outline" id="selectFolderBtn" style="display: none;">📂 1. เลือกลำแหน่งเซฟ</button>
+                <button class="btn-primary" id="sliceBtn" style="display: none;">🔪 2. ดูตัวอย่างรูป</button>
+                <button class="btn-success" id="saveAllBtn" style="display: none;">📥 3. เซฟทั้งหมดอัตโนมัติ</button>
+            </div>
+        </div>
+        
+        <div class="preview-grid" id="previewGrid">
+        </div>
+    </div>
+
+    <script>
+        const imageLoader = document.getElementById('imageLoader');
+        const gridRows = document.getElementById('gridRows');
+        const gridCols = document.getElementById('gridCols');
+        const startId = document.getElementById('startId');
+        const generateGridBtn = document.getElementById('generateGridBtn');
+        const addBoxBtn = document.getElementById('addBoxBtn');
+        const deleteBoxBtn = document.getElementById('deleteBoxBtn');
+        const renumberBtn = document.getElementById('renumberBtn');
+        const editBoxId = document.getElementById('editBoxId');
+        const toolbar = document.getElementById('toolbar');
+        
+        const selectFolderBtn = document.getElementById('selectFolderBtn');
+        const saveAllBtn = document.getElementById('saveAllBtn');
+        const folderStatus = document.getElementById('folderStatus');
+        const sliceBtn = document.getElementById('sliceBtn');
+        
+        const previewGrid = document.getElementById('previewGrid');
+        const interactiveCanvas = document.getElementById('interactiveCanvas');
+        const placeholderText = document.getElementById('placeholderText');
+        const ctx = interactiveCanvas.getContext('2d');
+        
+        let img = new Image();
+        let isImageLoaded = false;
+        let directoryHandle = null;
+        let croppedImagesData = [];
+        
+        // App State
+        let boxes = []; // Array of { id, x, y, w, h }
+        let selectedBoxIndex = null;
+        let highestId = 1;
+        
+        // Interaction State
+        let isDraggingBox = false;
+        let isResizingBox = null; // 'nw', 'ne', 'sw', 'se'
+        let dragOffsetX = 0;
+        let dragOffsetY = 0;
+        const HANDLE_SIZE = 12;
+        
+        imageLoader.addEventListener('change', (e) => {
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                img.onload = () => {
+                    interactiveCanvas.width = img.width;
+                    interactiveCanvas.height = img.height;
+                    isImageLoaded = true;
+                    placeholderText.style.display = 'none';
+                    interactiveCanvas.style.display = 'block';
+                    toolbar.style.display = 'flex';
+                    sliceBtn.style.display = 'flex';
+                    
+                    if (window.showDirectoryPicker) {
+                        selectFolderBtn.style.display = 'flex';
+                    }
+                    
+                    generateAutoGrid();
+                }
+                img.src = event.target.result;
+            }
+            if (e.target.files[0]) {
+                reader.readAsDataURL(e.target.files[0]);
+            }
+        });
+
+        generateGridBtn.addEventListener('click', generateAutoGrid);
+
+        function generateAutoGrid() {
+            if (!isImageLoaded) return;
+            const rows = parseInt(gridRows.value) || 1;
+            const cols = parseInt(gridCols.value) || 1;
+            let currentId = parseInt(startId.value) || 1;
+            
+            const cellW = img.width / cols;
+            const cellH = img.height / rows;
+            
+            // Margin / padding inside the cell
+            const marginX = 20;
+            const marginY = 20;
+            
+            boxes = [];
+            for (let r = 0; r < rows; r++) {
+                for (let c = 0; c < cols; c++) {
+                    boxes.push({
+                        id: currentId++,
+                        x: (c * cellW) + marginX,
+                        y: (r * cellH) + marginY,
+                        w: cellW - (marginX * 2),
+                        h: cellH - (marginY * 2)
+                    });
+                }
+            }
+            highestId = currentId;
+            selectedBoxIndex = null;
+            updateUI();
+            drawCanvas();
+        }
+
+        addBoxBtn.addEventListener('click', () => {
+            if (!isImageLoaded) return;
+            const size = Math.min(img.width, img.height) * 0.2;
+            boxes.push({
+                id: highestId++,
+                x: (img.width / 2) - (size / 2),
+                y: (img.height / 2) - (size / 2),
+                w: size,
+                h: size
+            });
+            selectedBoxIndex = boxes.length - 1;
+            updateUI();
+            drawCanvas();
+        });
+
+        deleteBoxBtn.addEventListener('click', deleteSelectedBox);
+
+        renumberBtn.addEventListener('click', () => {
+            if (boxes.length === 0) return;
+            const newStart = prompt("ระบุเลขเริ่มต้นใหม่สำหรับทุกกล่อง (เช่น 11):", "1");
+            if (newStart !== null && newStart.trim() !== "" && !isNaN(newStart)) {
+                let startNum = parseInt(newStart);
+                
+                // เรียงกล่องจากบนลงล่าง ซ้ายไปขวา
+                const sortedBoxes = [...boxes].sort((a, b) => {
+                    if (Math.abs(a.y - b.y) > 20) {
+                        return a.y - b.y;
+                    }
+                    return a.x - b.x;
+                });
+
+                sortedBoxes.forEach(box => {
+                    box.id = startNum++;
+                });
+                
+                highestId = startNum;
+                
+                if (selectedBoxIndex !== null) {
+                    editBoxId.value = boxes[selectedBoxIndex].id;
+                }
+                
+                drawCanvas();
+            }
+        });
+
+        function deleteSelectedBox() {
+            if (selectedBoxIndex !== null) {
+                boxes.splice(selectedBoxIndex, 1);
+                selectedBoxIndex = null;
+                updateUI();
+                drawCanvas();
+            }
+        }
+
+        // Delete via Keyboard
+        interactiveCanvas.addEventListener('keydown', (e) => {
+            if (e.key === 'Backspace' || e.key === 'Delete') {
+                deleteSelectedBox();
+                e.preventDefault();
+            }
+        });
+
+        function updateUI() {
+            deleteBoxBtn.disabled = (selectedBoxIndex === null);
+            if (selectedBoxIndex !== null) {
+                editBoxId.disabled = false;
+                editBoxId.value = boxes[selectedBoxIndex].id;
+            } else {
+                editBoxId.disabled = true;
+                editBoxId.value = '';
+            }
+        }
+
+        editBoxId.addEventListener('input', (e) => {
+            if (selectedBoxIndex !== null) {
+                boxes[selectedBoxIndex].id = e.target.value;
+                drawCanvas();
+            }
+        });
+
+        function drawCanvas() {
+            if (!isImageLoaded) return;
+            
+            ctx.clearRect(0, 0, interactiveCanvas.width, interactiveCanvas.height);
+            ctx.drawImage(img, 0, 0);
+            
+            // Dim background
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+            ctx.fillRect(0, 0, interactiveCanvas.width, interactiveCanvas.height);
+            
+            boxes.forEach((box, index) => {
+                const isSelected = (index === selectedBoxIndex);
+                
+                // Clear dim for the box interior
+                ctx.clearRect(box.x, box.y, box.w, box.h);
+                ctx.drawImage(img, box.x, box.y, box.w, box.h, box.x, box.y, box.w, box.h);
+                
+                // Box overlay & Border
+                ctx.fillStyle = isSelected ? 'rgba(26, 115, 232, 0.1)' : 'rgba(0, 0, 0, 0.1)';
+                ctx.fillRect(box.x, box.y, box.w, box.h);
+                
+                ctx.strokeStyle = isSelected ? '#1a73e8' : '#666';
+                ctx.lineWidth = isSelected ? 4 : 2;
+                ctx.strokeRect(box.x, box.y, box.w, box.h);
+                
+                // Draw ID Label
+                ctx.fillStyle = isSelected ? '#1a73e8' : '#666';
+                ctx.fillRect(box.x, box.y, 40, 30);
+                ctx.fillStyle = 'white';
+                ctx.font = 'bold 18px Arial';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(box.id, box.x + 20, box.y + 15);
+                
+                // Draw Handles if selected
+                if (isSelected) {
+                    ctx.fillStyle = 'white';
+                    ctx.strokeStyle = '#1a73e8';
+                    ctx.lineWidth = 2;
+                    const hs = HANDLE_SIZE;
+                    const half = hs/2;
+                    
+                    const drawHandle = (hx, hy) => {
+                        ctx.fillRect(hx - half, hy - half, hs, hs);
+                        ctx.strokeRect(hx - half, hy - half, hs, hs);
+                    };
+                    
+                    drawHandle(box.x, box.y); // nw
+                    drawHandle(box.x + box.w, box.y); // ne
+                    drawHandle(box.x, box.y + box.h); // sw
+                    drawHandle(box.x + box.w, box.y + box.h); // se
+                }
+            });
+        }
+        
+        function getMousePos(canvas, evt) {
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            return {
+                x: (evt.clientX - rect.left) * scaleX,
+                y: (evt.clientY - rect.top) * scaleY
+            };
+        }
+        
+        function hitTestHandles(box, x, y) {
+            const hs = HANDLE_SIZE;
+            const half = hs/2;
+            const isInside = (hx, hy) => (x >= hx - half && x <= hx + half && y >= hy - half && y <= hy + half);
+            
+            if (isInside(box.x, box.y)) return 'nw';
+            if (isInside(box.x + box.w, box.y)) return 'ne';
+            if (isInside(box.x, box.y + box.h)) return 'sw';
+            if (isInside(box.x + box.w, box.y + box.h)) return 'se';
+            return null;
+        }
+
+        function hitTestBox(box, x, y) {
+            return (x >= box.x && x <= box.x + box.w && y >= box.y && y <= box.y + box.h);
+        }
+
+        // --- Interaction Logic ---
+        interactiveCanvas.addEventListener('mousedown', (e) => {
+            if (!isImageLoaded) return;
+            // Focus canvas to enable keyboard events
+            interactiveCanvas.focus();
+            
+            const pos = getMousePos(interactiveCanvas, e);
+            
+            // 1. Check if clicking on handles of selected box
+            if (selectedBoxIndex !== null) {
+                const box = boxes[selectedBoxIndex];
+                const handle = hitTestHandles(box, pos.x, pos.y);
+                if (handle) {
+                    isResizingBox = handle;
+                    return;
+                }
+            }
+            
+            // 2. Check if clicking inside any box (check in reverse to pick top-most if overlapping)
+            for (let i = boxes.length - 1; i >= 0; i--) {
+                if (hitTestBox(boxes[i], pos.x, pos.y)) {
+                    selectedBoxIndex = i;
+                    isDraggingBox = true;
+                    dragOffsetX = pos.x - boxes[i].x;
+                    dragOffsetY = pos.y - boxes[i].y;
+                    updateUI();
+                    drawCanvas();
+                    return;
+                }
+            }
+            
+            // 3. Clicked outside - deselect
+            selectedBoxIndex = null;
+            updateUI();
+            drawCanvas();
+        });
+        
+        interactiveCanvas.addEventListener('mousemove', (e) => {
+            if (!isImageLoaded) return;
+            const pos = getMousePos(interactiveCanvas, e);
+            
+            // Change Cursor based on hover
+            let cursor = 'default';
+            if (selectedBoxIndex !== null) {
+                const handle = hitTestHandles(boxes[selectedBoxIndex], pos.x, pos.y);
+                if (handle === 'nw' || handle === 'se') cursor = 'nwse-resize';
+                else if (handle === 'ne' || handle === 'sw') cursor = 'nesw-resize';
+                else if (hitTestBox(boxes[selectedBoxIndex], pos.x, pos.y)) cursor = 'move';
+            } else {
+                for (let i = 0; i < boxes.length; i++) {
+                    if (hitTestBox(boxes[i], pos.x, pos.y)) {
+                        cursor = 'pointer';
+                        break;
+                    }
+                }
+            }
+            interactiveCanvas.style.cursor = cursor;
+            
+            if (selectedBoxIndex === null) return;
+            const box = boxes[selectedBoxIndex];
+            
+            if (isDraggingBox) {
+                box.x = pos.x - dragOffsetX;
+                box.y = pos.y - dragOffsetY;
+                drawCanvas();
+            } else if (isResizingBox) {
+                if (isResizingBox === 'nw') {
+                    const newW = box.w + (box.x - pos.x);
+                    const newH = box.h + (box.y - pos.y);
+                    if (newW > 20) { box.x = pos.x; box.w = newW; }
+                    if (newH > 20) { box.y = pos.y; box.h = newH; }
+                } else if (isResizingBox === 'ne') {
+                    const newW = pos.x - box.x;
+                    const newH = box.h + (box.y - pos.y);
+                    if (newW > 20) box.w = newW;
+                    if (newH > 20) { box.y = pos.y; box.h = newH; }
+                } else if (isResizingBox === 'sw') {
+                    const newW = box.w + (box.x - pos.x);
+                    const newH = pos.y - box.y;
+                    if (newW > 20) { box.x = pos.x; box.w = newW; }
+                    if (newH > 20) box.h = newH;
+                } else if (isResizingBox === 'se') {
+                    const newW = pos.x - box.x;
+                    const newH = pos.y - box.y;
+                    if (newW > 20) box.w = newW;
+                    if (newH > 20) box.h = newH;
+                }
+                drawCanvas();
+            }
+        });
+        
+        interactiveCanvas.addEventListener('mouseup', () => { isDraggingBox = false; isResizingBox = null; });
+        interactiveCanvas.addEventListener('mouseleave', () => { isDraggingBox = false; isResizingBox = null; });
+        
+        // --- Slicing Logic ---
+        sliceBtn.addEventListener('click', () => {
+            if (boxes.length === 0) { alert("ไม่มีกล่องให้ตัดครับ"); return; }
+            
+            // Sort boxes by Y first, then X to ensure natural reading order (top-down, left-right)
+            // But user might want to keep the IDs they assigned. We will use the box.id.
+            // Let's sort boxes by box.id just in case they got visually jumbled in the array.
+            const sortedBoxes = [...boxes].sort((a, b) => a.id - b.id);
+            
+            croppedImagesData = [];
+            
+            sortedBoxes.forEach(box => {
+                const tempCanvas = document.createElement('canvas');
+                tempCanvas.width = box.w;
+                tempCanvas.height = box.h;
+                const tCtx = tempCanvas.getContext('2d');
+                
+                tCtx.drawImage(img, box.x, box.y, box.w, box.h, 0, 0, box.w, box.h);
+                
+                croppedImagesData.push({
+                    fileName: `${box.id}.png`,
+                    dataUrl: tempCanvas.toDataURL('image/png'),
+                    canvas: tempCanvas
+                });
+            });
+            
+            renderPreviewGrid();
+            saveAllBtn.style.display = 'flex';
+        });
+        
+        function renderPreviewGrid() {
+            previewGrid.innerHTML = '';
+            croppedImagesData.forEach((item) => {
+                const itemDiv = document.createElement('div');
+                itemDiv.className = 'crop-item';
+                itemDiv.innerHTML = `
+                    <div class="file-name">${item.fileName}</div>
+                    <img src="${item.dataUrl}">
+                `;
+                previewGrid.appendChild(itemDiv);
+            });
+        }
+        
+        // --- File System Access API Logic ---
+        selectFolderBtn.addEventListener('click', async () => {
+            try {
+                directoryHandle = await window.showDirectoryPicker({
+                    mode: 'readwrite'
+                });
+                folderStatus.style.display = 'inline-block';
+                selectFolderBtn.innerText = '📁 เปลี่ยนโฟลเดอร์';
+            } catch (err) {
+                console.error(err);
+            }
+        });
+        
+        saveAllBtn.addEventListener('click', async () => {
+            if (croppedImagesData.length === 0) return;
+            
+            if (directoryHandle) {
+                saveAllBtn.innerText = 'กำลังเซฟ...';
+                saveAllBtn.disabled = true;
+                
+                try {
+                    for (const item of croppedImagesData) {
+                        const fileHandle = await directoryHandle.getFileHandle(item.fileName, { create: true });
+                        const writable = await fileHandle.createWritable();
+                        
+                        const blob = await new Promise(resolve => item.canvas.toBlob(resolve, 'image/png'));
+                        
+                        await writable.write(blob);
+                        await writable.close();
+                    }
+                    alert(`เซฟรูปภาพทั้ง ${croppedImagesData.length} รูปลงในโฟลเดอร์เรียบร้อยแล้วครับ! 🎉`);
+                } catch (err) {
+                    console.error("Error saving files:", err);
+                    alert("เกิดข้อผิดพลาดในการเซฟไฟล์");
+                }
+                
+                saveAllBtn.innerText = '📥 3. เซฟทั้งหมดอัตโนมัติ';
+                saveAllBtn.disabled = false;
+                
+            } else {
+                alert("คุณยังไม่ได้เลือกโฟลเดอร์ ระบบจะใช้วิธีดาวน์โหลดทีละไฟล์");
+                let i = 0;
+                const interval = setInterval(() => {
+                    if (i >= croppedImagesData.length) {
+                        clearInterval(interval);
+                        return;
+                    }
+                    const link = document.createElement('a');
+                    link.download = croppedImagesData[i].fileName;
+                    link.href = croppedImagesData[i].dataUrl;
+                    link.click();
+                    i++;
+                }, 300);
+            }
+        });
+    </script>
+</body>
+</html>

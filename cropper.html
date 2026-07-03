@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Image Cropping Tool</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; background-color: #f5f5f5; }
+        .container { max-width: 900px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        h1 { color: #333; margin-top: 0; }
+        #canvasContainer { 
+            position: relative; 
+            display: inline-block; 
+            border: 1px dashed #999; 
+            margin-top: 10px; 
+            cursor: crosshair;
+            max-width: 100%;
+            overflow: auto;
+            background: #eee;
+        }
+        canvas { display: block; max-width: 100%; height: auto; }
+        .controls { display: flex; gap: 10px; align-items: center; margin-bottom: 20px; flex-wrap: wrap; }
+        button, input[type=file], input[type=number] { padding: 10px; font-size: 16px; border: 1px solid #ccc; border-radius: 4px; }
+        .info { background: #e3f2fd; padding: 15px; border-radius: 8px; margin-bottom: 20px; border-left: 5px solid #2196f3; line-height: 1.5; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>✂️ เครื่องมือตัดรูปภาพ (Cropping Tool)</h1>
+        <div class="info">
+            <strong>วิธีใช้งาน:</strong>
+            <ol>
+                <li>กดปุ่ม <b>Choose File</b> เพื่อเลือกไฟล์รูปถ่ายหน้าหนังสือ</li>
+                <li>คลิกและลากเมาส์เพื่อสร้างกรอบครอบรูปผักที่ต้องการ</li>
+                <li>กดปุ่ม <b>Crop & Download</b> (หรือกดปุ่ม <b>Enter</b> บนคีย์บอร์ด) รูปจะถูกตัดและบันทึกลงเครื่องอัตโนมัติ โดยตั้งชื่อไล่ลำดับตัวเลขให้เลย (เช่น 1.png, 2.png)</li>
+                <li>ทำจนครบทุกรูป จากนั้นนำไฟล์รูปที่ได้ ไปใส่ในโฟลเดอร์ <code>images</code> ของโปรแกรมหลัก</li>
+            </ol>
+        </div>
+        
+        <div class="controls">
+            <input type="file" id="imageLoader" accept="image/*" />
+            <div style="display: flex; align-items: center; gap: 5px; background: #f9f9f9; padding: 5px 15px; border-radius: 4px; border: 1px solid #eee;">
+                <label style="font-weight: bold; color: #555;">ชื่อไฟล์ที่จะเซฟ:</label>
+                <input type="number" id="fileCounter" value="1" style="width: 60px; text-align: center; font-weight: bold;" />
+                <span style="font-weight: bold; color: #555;">.png</span>
+            </div>
+            <button id="cropBtn" style="background-color: #4CAF50; color: white; border: none; cursor: pointer; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">✨ Crop & Download (Enter)</button>
+        </div>
+
+        <div id="canvasContainer">
+            <canvas id="mainCanvas"></canvas>
+        </div>
+    </div>
+
+    <script>
+        const imageLoader = document.getElementById('imageLoader');
+        const mainCanvas = document.getElementById('mainCanvas');
+        const ctx = mainCanvas.getContext('2d');
+        const fileCounter = document.getElementById('fileCounter');
+        const cropBtn = document.getElementById('cropBtn');
+
+        let img = new Image();
+        let isDrawing = false;
+        let startX, startY, endX, endY;
+        let renderScale = 1;
+
+        imageLoader.addEventListener('change', handleImage, false);
+
+        function handleImage(e) {
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                img.onload = function() {
+                    // Set canvas actual size
+                    mainCanvas.width = img.width;
+                    mainCanvas.height = img.height;
+                    drawImageAndRect();
+                }
+                img.src = event.target.result;
+            }
+            if (e.target.files[0]) {
+                reader.readAsDataURL(e.target.files[0]);
+            }
+        }
+
+        function drawImageAndRect() {
+            ctx.clearRect(0, 0, mainCanvas.width, mainCanvas.height);
+            if (img.src) {
+                ctx.drawImage(img, 0, 0);
+            }
+            
+            if (startX !== undefined && endX !== undefined) {
+                ctx.strokeStyle = '#FF3B30';
+                ctx.lineWidth = 4;
+                ctx.setLineDash([8, 4]);
+                ctx.strokeRect(startX, startY, endX - startX, endY - startY);
+                ctx.fillStyle = 'rgba(255, 59, 48, 0.2)';
+                ctx.fillRect(startX, startY, endX - startX, endY - startY);
+                ctx.setLineDash([]);
+            }
+        }
+
+        function getMousePos(evt) {
+            const rect = mainCanvas.getBoundingClientRect();
+            // scaleX/scaleY handles when canvas CSS size != canvas internal size
+            const scaleX = mainCanvas.width / rect.width;
+            const scaleY = mainCanvas.height / rect.height;
+            return {
+                x: (evt.clientX - rect.left) * scaleX,
+                y: (evt.clientY - rect.top) * scaleY
+            };
+        }
+
+        mainCanvas.addEventListener('mousedown', function(e) {
+            const pos = getMousePos(e);
+            startX = pos.x;
+            startY = pos.y;
+            isDrawing = true;
+            endX = startX;
+            endY = startY;
+        });
+
+        mainCanvas.addEventListener('mousemove', function(e) {
+            if (!isDrawing) return;
+            const pos = getMousePos(e);
+            endX = pos.x;
+            endY = pos.y;
+            drawImageAndRect();
+        });
+
+        mainCanvas.addEventListener('mouseup', function(e) {
+            isDrawing = false;
+        });
+        
+        mainCanvas.addEventListener('mouseleave', function(e) {
+            isDrawing = false;
+        });
+
+        function cropAndDownload() {
+            if (startX === undefined || endX === undefined || Math.abs(endX - startX) < 10) {
+                alert('กรุณาลากเมาส์ครอบรูปที่ต้องการให้ชัดเจนก่อนครับ');
+                return;
+            }
+
+            const x = Math.min(startX, endX);
+            const y = Math.min(startY, endY);
+            const width = Math.abs(endX - startX);
+            const height = Math.abs(endY - startY);
+
+            // Create temporary canvas for the cropped area
+            const cropCanvas = document.createElement('canvas');
+            cropCanvas.width = width;
+            cropCanvas.height = height;
+            const cropCtx = cropCanvas.getContext('2d');
+            
+            // Draw only the selected region from the original image (not the canvas with the red box)
+            cropCtx.drawImage(img, x, y, width, height, 0, 0, width, height);
+
+            // Create download link
+            const link = document.createElement('a');
+            const num = fileCounter.value;
+            link.download = num + '.png';
+            link.href = cropCanvas.toDataURL('image/png');
+            link.click();
+
+            // Auto-increment counter
+            fileCounter.value = parseInt(num) + 1;
+            
+            // Clear selection visually
+            startX = undefined;
+            endX = undefined;
+            drawImageAndRect();
+        }
+
+        cropBtn.addEventListener('click', cropAndDownload);
+        
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                cropAndDownload();
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Vocab Admin Panel</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f3f4f6; margin: 0; padding: 20px; color: #1f2937; }
+        .container { max-width: 1200px; margin: 0 auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        h1 { margin-top: 0; color: #4F46E5; display: flex; align-items: center; justify-content: space-between; }
+        
+        .btn { padding: 8px 16px; border: none; border-radius: 6px; font-size: 0.95rem; font-weight: 600; cursor: pointer; transition: 0.2s; }
+        .btn-primary { background: #4F46E5; color: white; }
+        .btn-primary:hover { background: #4338CA; }
+        .btn-success { background: #10B981; color: white; padding: 12px 24px; font-size: 1.1rem; }
+        .btn-success:hover { background: #059669; }
+        .btn-danger { background: #EF4444; color: white; padding: 4px 8px; font-size: 0.8rem; }
+        .btn-danger:hover { background: #DC2626; }
+        
+        .layout { display: grid; grid-template-columns: 250px 1fr; gap: 30px; margin-top: 20px; }
+        
+        .sidebar { background: #f9fafb; padding: 15px; border-radius: 8px; border: 1px solid #e5e7eb; }
+        .category-list { list-style: none; padding: 0; margin: 0; }
+        .category-item { padding: 10px; margin-bottom: 5px; border-radius: 6px; cursor: pointer; transition: 0.2s; font-weight: 500; display: flex; justify-content: space-between; align-items: center; }
+        .category-item:hover { background: #e0e7ff; }
+        .category-item.active { background: #4F46E5; color: white; }
+        
+        .editor-panel { background: #fff; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; font-weight: 600; margin-bottom: 5px; font-size: 0.9rem; }
+        .form-group input { width: 100%; padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 6px; box-sizing: border-box; }
+        
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #e5e7eb; }
+        th { background: #f9fafb; font-weight: 600; color: #4b5563; }
+        td input { width: 90%; padding: 6px; border: 1px solid #ccc; border-radius: 4px; }
+        
+        .instructions { background: #FEF3C7; color: #92400E; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #FCD34D; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>
+            <span>⚙️ ระบบจัดการคำศัพท์ (Admin Panel)</span>
+            <div style="display: flex; gap: 10px;">
+                <a href="vocab-studio.html" class="btn btn-warning" style="text-decoration: none;">✨ ลองใช้ Vocab Studio (AI)</a>
+                <button class="btn btn-success" id="downloadBtn">💾 บันทึกและดาวน์โหลดไฟล์ (Save)</button>
+            </div>
+        </h1>
+        
+        <div class="instructions">
+            <strong>วิธีใช้งาน:</strong>
+            <ol style="margin: 5px 0 0 20px;">
+                <li>เพิ่ม/แก้ไขหมวดหมู่ หรือคำศัพท์ ด้านล่างนี้</li>
+                <li>กดปุ่ม <b>"บันทึกและดาวน์โหลดไฟล์"</b> ด้านบนขวา</li>
+                <li>คุณจะได้ไฟล์ชื่อ <code>data.js</code> ให้เอาไฟล์นี้ไป <b>วางทับ</b> ไฟล์เดิมในโฟลเดอร์ <code>vocab-tester</code> ได้เลยครับ!</li>
+            </ol>
+        </div>
+
+        <div class="layout">
+            <!-- Sidebar -->
+            <div class="sidebar">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h3 style="margin: 0;">หมวดหมู่</h3>
+                    <button class="btn btn-primary" style="padding: 4px 8px;" id="addCatBtn">➕ เพิ่ม</button>
+                </div>
+                <ul class="category-list" id="categoryList">
+                    <!-- Categories will be injected here -->
+                </ul>
+            </div>
+
+            <!-- Editor -->
+            <div class="editor-panel" id="editorPanel" style="display: none;">
+                <div style="background: #f9fafb; padding: 20px; border-radius: 8px; border: 1px solid #e5e7eb; margin-bottom: 20px;">
+                    <h3 style="margin-top: 0;">ตั้งค่าหมวดหมู่</h3>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                        <div class="form-group">
+                            <label>รหัสโฟลเดอร์รูป (ภาษาอังกฤษ, ห้ามเว้นวรรค)</label>
+                            <input type="text" id="catId" disabled style="background: #eee;">
+                        </div>
+                        <div class="form-group">
+                            <label>ชื่อหมวดหมู่ (แสดงบนหน้าจอ)</label>
+                            <input type="text" id="catName">
+                        </div>
+                        <div class="form-group">
+                            <label>ไอคอน (Emoji)</label>
+                            <input type="text" id="catEmoji">
+                        </div>
+                        <div class="form-group">
+                            <label>คำอธิบาย</label>
+                            <input type="text" id="catDesc">
+                        </div>
+                    </div>
+                </div>
+
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <h3 style="margin: 0;">คำศัพท์ในหมวดนี้</h3>
+                    <button class="btn btn-primary" id="addWordBtn">➕ เพิ่มคำศัพท์</button>
+                </div>
+
+                <table id="wordsTable">
+                    <thead>
+                        <tr>
+                            <th width="10%">ไฟล์รูป (ID)</th>
+                            <th width="25%">อังกฤษ (EN)</th>
+                            <th width="25%">ไทย (TH)</th>
+                            <th width="25%">คำอ่าน (Pronunciation)</th>
+                            <th width="15%">จัดการ</th>
+                        </tr>
+                    </thead>
+                    <tbody id="wordsBody">
+                        <!-- Words injected here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Load existing data -->
+    <script src="data.js"></script>
+    <script>
+        // Use a deep copy to avoid editing the actual window object immediately (though it doesn't matter much)
+        let appData = JSON.parse(JSON.stringify(categoriesData));
+        let activeCategoryId = null;
+
+        // DOM Elements
+        const categoryList = document.getElementById('categoryList');
+        const editorPanel = document.getElementById('editorPanel');
+        const catIdInput = document.getElementById('catId');
+        const catNameInput = document.getElementById('catName');
+        const catEmojiInput = document.getElementById('catEmoji');
+        const catDescInput = document.getElementById('catDesc');
+        const wordsBody = document.getElementById('wordsBody');
+        
+        // Render Categories
+        function renderCategories() {
+            categoryList.innerHTML = '';
+            for (const key in appData) {
+                const cat = appData[key];
+                const li = document.createElement('li');
+                li.className = `category-item ${activeCategoryId === key ? 'active' : ''}`;
+                li.innerHTML = `
+                    <span>${cat.emoji} ${cat.name}</span>
+                    <button class="btn btn-danger" onclick="deleteCategory(event, '${key}')">ลบ</button>
+                `;
+                li.onclick = () => loadCategory(key);
+                categoryList.appendChild(li);
+            }
+        }
+
+        function loadCategory(key) {
+            activeCategoryId = key;
+            renderCategories();
+            
+            const cat = appData[key];
+            catIdInput.value = cat.id;
+            catNameInput.value = cat.name;
+            catEmojiInput.value = cat.emoji;
+            catDescInput.value = cat.desc;
+            
+            editorPanel.style.display = 'block';
+            renderWords();
+        }
+
+        function renderWords() {
+            wordsBody.innerHTML = '';
+            const items = appData[activeCategoryId].items;
+            
+            items.forEach((item, index) => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td><strong>${item.id}.png</strong></td>
+                    <td><input type="text" value="${item.en}" onchange="updateWord(${index}, 'en', this.value)"></td>
+                    <td><input type="text" value="${item.th}" onchange="updateWord(${index}, 'th', this.value)"></td>
+                    <td><input type="text" value="${item.pron}" onchange="updateWord(${index}, 'pron', this.value)"></td>
+                    <td>
+                        <button class="btn btn-danger" onclick="deleteWord(${index})">ลบ</button>
+                    </td>
+                `;
+                wordsBody.appendChild(tr);
+            });
+        }
+
+        // Live updating data object
+        catNameInput.addEventListener('change', (e) => appData[activeCategoryId].name = e.target.value);
+        catEmojiInput.addEventListener('change', (e) => appData[activeCategoryId].emoji = e.target.value);
+        catDescInput.addEventListener('change', (e) => appData[activeCategoryId].desc = e.target.value);
+        
+        window.updateWord = function(index, field, value) {
+            appData[activeCategoryId].items[index][field] = value;
+        }
+
+        window.deleteWord = function(index) {
+            if(confirm("แน่ใจหรือไม่ที่จะลบคำศัพท์นี้?")) {
+                appData[activeCategoryId].items.splice(index, 1);
+                // Re-assign IDs to maintain 1.png, 2.png sequence
+                appData[activeCategoryId].items.forEach((item, i) => {
+                    item.id = i + 1;
+                });
+                renderWords();
+            }
+        }
+
+        document.getElementById('addWordBtn').addEventListener('click', () => {
+            const items = appData[activeCategoryId].items;
+            const newId = items.length > 0 ? items[items.length - 1].id + 1 : 1;
+            items.push({
+                id: newId,
+                en: "",
+                th: "",
+                pron: ""
+            });
+            renderWords();
+        });
+
+        document.getElementById('addCatBtn').addEventListener('click', () => {
+            const catId = prompt("ตั้งชื่อรหัสโฟลเดอร์สำหรับหมวดนี้ (ภาษาอังกฤษพิมพ์เล็กเท่านั้น เช่น 'animals'):");
+            if (!catId) return;
+            
+            // Format ID (lowercase, replace spaces with hyphens)
+            const formattedId = catId.toLowerCase().replace(/[^a-z0-9]/g, '');
+            
+            if (appData[formattedId]) {
+                alert("รหัสโฟลเดอร์นี้มีอยู่แล้วครับ!");
+                return;
+            }
+
+            appData[formattedId] = {
+                id: formattedId,
+                name: "หมวดหมู่ใหม่",
+                emoji: "✨",
+                desc: "คำอธิบายหมวดหมู่ใหม่",
+                items: []
+            };
+            
+            loadCategory(formattedId);
+        });
+
+        window.deleteCategory = function(e, key) {
+            e.stopPropagation(); // Prevent loading category
+            if(confirm(`แน่ใจหรือไม่ที่จะลบหมวดหมู่ ${appData[key].name} ข้อมูลคำศัพท์ข้างในจะหายทั้งหมด?`)) {
+                delete appData[key];
+                if (activeCategoryId === key) {
+                    activeCategoryId = null;
+                    editorPanel.style.display = 'none';
+                }
+                renderCategories();
+            }
+        }
+
+        // Export Function (Generate JS file)
+        document.getElementById('downloadBtn').addEventListener('click', () => {
+            // Stringify the data object beautifully
+            const jsonString = JSON.stringify(appData, null, 4);
+            const jsContent = `const categoriesData = ${jsonString};`;
+            
+            // Create a blob and download it
+            const blob = new Blob([jsContent], { type: 'text/javascript' });
+            const url = URL.createObjectURL(blob);
+            
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'data.js';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            alert("ดาวน์โหลดไฟล์ data.js เสร็จสิ้น!\\n\\nกรุณานำไฟล์นี้ไป 'วางทับ' ไฟล์เดิมในโฟลเดอร์ vocab-tester ของคุณครับ");
+        });
+
+        // Initialize
+        renderCategories();
+        // Load first category if exists
+        const keys = Object.keys(appData);
+        if (keys.length > 0) {
+            loadCategory(keys[0]);
+        }
+    </script>
+</body>
+</html>

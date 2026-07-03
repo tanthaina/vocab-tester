@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Vocab Studio (AI Assistant)</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f0f2f5; margin: 0; padding: 20px; color: #333; }
+        .container { max-width: 1400px; margin: 0 auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 8px 16px rgba(0,0,0,0.1); }
+        h1 { margin-top: 0; color: #4F46E5; display: flex; align-items: center; gap: 10px; }
+        
+        .panel { background: #f8fafc; padding: 20px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #e2e8f0; }
+        .panel-title { font-size: 1.1rem; font-weight: bold; margin-bottom: 15px; color: #1e293b; border-bottom: 2px solid #e2e8f0; padding-bottom: 5px; }
+        
+        .flex-row { display: flex; gap: 15px; align-items: flex-end; flex-wrap: wrap; margin-bottom: 15px; }
+        .input-group { display: flex; flex-direction: column; gap: 5px; }
+        .input-group label { font-weight: 600; font-size: 0.9rem; color: #475569; }
+        input[type="text"], input[type="number"], input[type="file"], textarea { padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 1rem; font-family: inherit; }
+        input[type="number"] { width: 80px; }
+        
+        button { padding: 10px 16px; border: none; border-radius: 6px; font-size: 0.95rem; font-weight: bold; cursor: pointer; transition: 0.2s; display: flex; align-items: center; gap: 5px; }
+        .btn-primary { background: #4F46E5; color: white; }
+        .btn-primary:hover { background: #4338CA; }
+        .btn-success { background: #10B981; color: white; }
+        .btn-success:hover { background: #059669; }
+        .btn-danger { background: #EF4444; color: white; }
+        .btn-danger:hover { background: #DC2626; }
+        .btn-warning { background: #F59E0B; color: white; }
+        .btn-warning:hover { background: #D97706; }
+        .btn-outline { background: white; border: 2px solid #4F46E5; color: #4F46E5; }
+        .btn-outline:hover { background: #EEF2FF; }
+        
+        .toolbar { display: flex; gap: 10px; padding: 10px; background: #e0e7ff; border-radius: 8px; align-items: center; flex-wrap: wrap; }
+        
+        .main-layout { display: flex; gap: 20px; margin-top: 20px; align-items: flex-start; }
+        
+        .workspace {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background: #f1f5f9;
+            border: 2px dashed #cbd5e1;
+            border-radius: 8px;
+            padding: 20px;
+            overflow: auto;
+            max-height: 70vh;
+        }
+        
+        #interactiveCanvas {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            max-width: 100%;
+        }
+        
+        .sidebar {
+            width: 300px;
+            flex-shrink: 0;
+            background: #fff;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 15px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+        
+        .status-badge { background: #dcfce7; color: #166534; padding: 5px 10px; border-radius: 16px; font-size: 0.85rem; font-weight: bold; display: none; }
+        
+        .preview-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 15px; margin-top: 20px; }
+        .crop-item { background: #fff; border: 1px solid #ddd; border-radius: 8px; padding: 10px; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .crop-item img { max-width: 100%; height: auto; border: 1px dashed #ccc; margin-bottom: 10px; }
+        .crop-item .file-name { font-weight: bold; margin-bottom: 5px; color: #333; }
+        .crop-item .vocab-info { font-size: 0.85rem; color: #666; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>✨ Vocab Studio (AI Assistant)</h1>
+        <p style="color: #64748b; margin-top: -5px; margin-bottom: 20px;">
+            เครื่องมือแบบครบวงจร: ลากกล่องตัดรูป -> ใส่คำศัพท์ด้วย AI -> เซฟลงโปรเจกต์ทันที
+        </p>
+        
+        <div class="panel">
+            <div class="panel-title">1. ตั้งค่าหมวดหมู่ (Category Setup)</div>
+            <div class="flex-row">
+                <div class="input-group">
+                    <label>รหัสโฟลเดอร์ (ID เช่น animals)</label>
+                    <input type="text" id="catId" placeholder="พิมพ์ภาษาอังกฤษล้วน">
+                </div>
+                <div class="input-group">
+                    <label>ชื่อหมวดหมู่</label>
+                    <input type="text" id="catName" placeholder="เช่น สัตว์ต่างๆ (Animals)">
+                </div>
+                <div class="input-group">
+                    <label>Emoji</label>
+                    <input type="text" id="catEmoji" placeholder="🐶" style="width: 60px;">
+                </div>
+                <div class="input-group" style="flex-grow: 1;">
+                    <label>คำอธิบายสั้นๆ</label>
+                    <input type="text" id="catDesc" placeholder="ฝึกออกเสียงและท่องจำคำศัพท์...">
+                </div>
+            </div>
+        </div>
+
+        <div class="panel">
+            <div class="panel-title">2. อัปโหลดรูป & นำเข้าข้อมูล (Image & Data Import)</div>
+            <div class="flex-row" style="align-items: flex-start;">
+                <div style="display: flex; flex-direction: column; gap: 15px; flex-grow: 1;">
+                    <div class="input-group">
+                        <label>เลือกรูปภาพหน้าหนังสือ</label>
+                        <input type="file" id="imageLoader" accept="image/*">
+                    </div>
+                    <div class="flex-row">
+                        <div class="input-group">
+                            <label>แถว (Rows)</label>
+                            <input type="number" id="gridRows" value="5" min="1">
+                        </div>
+                        <div class="input-group">
+                            <label>คอลัมน์ (Cols)</label>
+                            <input type="number" id="gridCols" value="2" min="1">
+                        </div>
+                        <div class="input-group">
+                            <label>รหัสเริ่มต้น (Start ID)</label>
+                            <input type="number" id="startId" value="1" min="1">
+                        </div>
+                        <button class="btn-outline" id="generateGridBtn" style="margin-bottom: 2px;">🤖 สร้างกล่องอัตโนมัติ</button>
+                    </div>
+                </div>
+                
+                <div class="input-group" style="flex-grow: 2;">
+                    <label>นำเข้าข้อมูลจาก AI (วาง JSON ที่ได้จากแชท)</label>
+                    <textarea id="aiJsonInput" rows="4" placeholder='[{"id": 1, "en": "cat", "th": "แมว", "pron": "แคท"}, ...]'></textarea>
+                    <button class="btn-primary" id="importJsonBtn" style="margin-top: 5px;">📥 นำเข้าคำศัพท์เข้ากล่อง</button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="toolbar" id="toolbar" style="display: none;">
+            <button class="btn-outline" id="addBoxBtn">➕ เพิ่มกล่องใหม่</button>
+            <button class="btn-danger" id="deleteBoxBtn" disabled>🗑️ ลบกล่อง</button>
+            <button class="btn-warning" id="renumberBtn">🔢 รันเลขกล่องใหม่ทั้งหมด</button>
+            <span style="color: #4F46E5; margin-left: 10px; font-size: 0.9rem; font-weight: bold;">
+                👉 คลิกที่กล่องเพื่อขยับ/ย่อขยาย หรือแก้ไขคำศัพท์ด้านขวามือ
+            </span>
+        </div>
+
+        <div class="main-layout">
+            <!-- Interactive Workspace -->
+            <div class="workspace" id="workspace">
+                <div style="color: #94a3b8; text-align: center; padding: 40px; font-size: 1.2rem;" id="placeholderText">
+                    อัปโหลดรูปภาพเพื่อเริ่มทำงาน
+                </div>
+                <canvas id="interactiveCanvas" style="display: none;" tabindex="0"></canvas>
+            </div>
+            
+            <!-- Sidebar for editing selected box -->
+            <div class="sidebar" id="boxEditor" style="opacity: 0.5; pointer-events: none;">
+                <div class="panel-title" style="color: #4F46E5;">✏️ ข้อมูลคำศัพท์ (กล่องที่เลือก)</div>
+                <div class="input-group" style="margin-bottom: 10px;">
+                    <label>รหัสไฟล์ (ID)</label>
+                    <input type="text" id="editBoxId" style="font-weight: bold; font-size: 1.2rem; text-align: center;">
+                </div>
+                <div class="input-group" style="margin-bottom: 10px;">
+                    <label>ภาษาอังกฤษ (EN)</label>
+                    <input type="text" id="editBoxEn" placeholder="apple">
+                </div>
+                <div class="input-group" style="margin-bottom: 10px;">
+                    <label>ภาษาไทย (TH)</label>
+                    <input type="text" id="editBoxTh" placeholder="แอปเปิ้ล">
+                </div>
+                <div class="input-group" style="margin-bottom: 10px;">
+                    <label>คำอ่าน (Pronunciation)</label>
+                    <input type="text" id="editBoxPron" placeholder="แอปเปิล">
+                </div>
+                <div style="font-size: 0.85rem; color: #64748b; margin-top: 15px; background: #f8fafc; padding: 10px; border-radius: 4px;">
+                    ข้อมูลที่พิมพ์ที่นี่จะถูกบันทึกลงกล่องทันที ไม่ต้องกดปุ่มเซฟ
+                </div>
+            </div>
+        </div>
+
+        <div class="panel" style="margin-top: 30px; background: #f0fdf4; border-color: #bbf7d0;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <h2 style="margin: 0; color: #166534;">3. บันทึกและนำไปใช้ (Save Project)</h2>
+                    <p style="margin: 5px 0 0 0; color: #15803d; font-size: 0.95rem;">
+                        เลือกรู้ตโฟลเดอร์ `vocab-tester` แล้วกดเซฟ ระบบจะตัดรูปและสร้าง `data.js` ให้เลย!
+                    </p>
+                </div>
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <span id="folderStatus" class="status-badge">✅ เลือกโฟลเดอร์สำเร็จ</span>
+                    <button class="btn-outline" id="selectFolderBtn" style="border-color: #166534; color: #166534;">📂 1. เลือกโฟลเดอร์หลัก (vocab-tester)</button>
+                    <button class="btn-success" id="saveAllBtn" style="display: none; font-size: 1.1rem; padding: 12px 24px;">🚀 2. Save Project ทั้งหมด</button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="preview-grid" id="previewGrid">
+        </div>
+    </div>
+
+    <!-- Load existing data -->
+    <script src="data.js"></script>
+    <script>
+        // Global Data from data.js
+        let appData = typeof categoriesData !== 'undefined' ? JSON.parse(JSON.stringify(categoriesData)) : {};
+
+        const imageLoader = document.getElementById('imageLoader');
+        const gridRows = document.getElementById('gridRows');
+        const gridCols = document.getElementById('gridCols');
+        const startId = document.getElementById('startId');
+        const generateGridBtn = document.getElementById('generateGridBtn');
+        const addBoxBtn = document.getElementById('addBoxBtn');
+        const deleteBoxBtn = document.getElementById('deleteBoxBtn');
+        const renumberBtn = document.getElementById('renumberBtn');
+        const toolbar = document.getElementById('toolbar');
+        
+        const aiJsonInput = document.getElementById('aiJsonInput');
+        const importJsonBtn = document.getElementById('importJsonBtn');
+        
+        const selectFolderBtn = document.getElementById('selectFolderBtn');
+        const saveAllBtn = document.getElementById('saveAllBtn');
+        const folderStatus = document.getElementById('folderStatus');
+        
+        const previewGrid = document.getElementById('previewGrid');
+        const interactiveCanvas = document.getElementById('interactiveCanvas');
+        const placeholderText = document.getElementById('placeholderText');
+        const ctx = interactiveCanvas.getContext('2d');
+        
+        // Sidebar Editors
+        const boxEditor = document.getElementById('boxEditor');
+        const editBoxId = document.getElementById('editBoxId');
+        const editBoxEn = document.getElementById('editBoxEn');
+        const editBoxTh = document.getElementById('editBoxTh');
+        const editBoxPron = document.getElementById('editBoxPron');
+        
+        let img = new Image();
+        let isImageLoaded = false;
+        let directoryHandle = null;
+        let croppedImagesData = [];
+        
+        // App State
+        let boxes = []; // Array of { id, x, y, w, h, en, th, pron }
+        let selectedBoxIndex = null;
+        let highestId = 1;
+        
+        // Interaction State
+        let isDraggingBox = false;
+        let isResizingBox = null;
+        let dragOffsetX = 0;
+        let dragOffsetY = 0;
+        const HANDLE_SIZE = 12;
+        
+        // Try checking if we can use File System Access API
+        if (window.showDirectoryPicker) {
+            selectFolderBtn.style.display = 'flex';
+        } else {
+            alert("เบราว์เซอร์ของคุณไม่รองรับระบบเซฟไฟล์อัตโนมัติ (File System Access API)\\nโปรดใช้ Google Chrome หรือ Edge");
+        }
+
+        imageLoader.addEventListener('change', (e) => {
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                img.onload = () => {
+                    interactiveCanvas.width = img.width;
+                    interactiveCanvas.height = img.height;
+                    isImageLoaded = true;
+                    placeholderText.style.display = 'none';
+                    interactiveCanvas.style.display = 'block';
+                    toolbar.style.display = 'flex';
+                    generateAutoGrid();
+                }
+                img.src = event.target.result;
+            }
+            if (e.target.files[0]) {
+                reader.readAsDataURL(e.target.files[0]);
+            }
+        });
+
+        generateGridBtn.addEventListener('click', generateAutoGrid);
+
+        function generateAutoGrid() {
+            if (!isImageLoaded) return;
+            const rows = parseInt(gridRows.value) || 1;
+            const cols = parseInt(gridCols.value) || 1;
+            let currentId = parseInt(startId.value) || 1;
+            
+            const cellW = img.width / cols;
+            const cellH = img.height / rows;
+            const marginX = 20;
+            const marginY = 20;
+            
+            boxes = [];
+            for (let r = 0; r < rows; r++) {
+                for (let c = 0; c < cols; c++) {
+                    boxes.push({
+                        id: currentId++,
+                        x: (c * cellW) + marginX,
+                        y: (r * cellH) + marginY,
+                        w: cellW - (marginX * 2),
+                        h: cellH - (marginY * 2),
+                        en: '', th: '', pron: ''
+                    });
+                }
+            }
+            highestId = currentId;
+            selectedBoxIndex = null;
+            updateUI();
+            drawCanvas();
+        }
+
+        addBoxBtn.addEventListener('click', () => {
+            if (!isImageLoaded) return;
+            const size = Math.min(img.width, img.height) * 0.2;
+            boxes.push({
+                id: highestId++,
+                x: (img.width / 2) - (size / 2),
+                y: (img.height / 2) - (size / 2),
+                w: size, h: size,
+                en: '', th: '', pron: ''
+            });
+            selectedBoxIndex = boxes.length - 1;
+            updateUI();
+            drawCanvas();
+        });
+
+        deleteBoxBtn.addEventListener('click', deleteSelectedBox);
+        interactiveCanvas.addEventListener('keydown', (e) => {
+            if (e.key === 'Backspace' || e.key === 'Delete') {
+                deleteSelectedBox();
+                e.preventDefault();
+            }
+        });
+
+        function deleteSelectedBox() {
+            if (selectedBoxIndex !== null) {
+                boxes.splice(selectedBoxIndex, 1);
+                selectedBoxIndex = null;
+                updateUI();
+                drawCanvas();
+            }
+        }
+
+        renumberBtn.addEventListener('click', () => {
+            if (boxes.length === 0) return;
+            const newStart = prompt("ระบุเลขเริ่มต้นใหม่สำหรับทุกกล่อง (เช่น 1):", "1");
+            if (newStart !== null && newStart.trim() !== "" && !isNaN(newStart)) {
+                let startNum = parseInt(newStart);
+                const sortedBoxes = [...boxes].sort((a, b) => {
+                    if (Math.abs(a.y - b.y) > 20) return a.y - b.y;
+                    return a.x - b.x;
+                });
+                sortedBoxes.forEach(box => { box.id = startNum++; });
+                highestId = startNum;
+                updateUI();
+                drawCanvas();
+            }
+        });
+
+        // AI JSON Import Logic
+        importJsonBtn.addEventListener('click', () => {
+            const rawJson = aiJsonInput.value.trim();
+            if (!rawJson) {
+                alert("กรุณาวางโค้ด JSON จาก AI ก่อนครับ");
+                return;
+            }
+            try {
+                const parsed = JSON.parse(rawJson);
+                if (!Array.isArray(parsed)) throw new Error("JSON must be an array");
+                
+                let updatedCount = 0;
+                parsed.forEach(item => {
+                    // Find box with matching ID
+                    const box = boxes.find(b => b.id == item.id);
+                    if (box) {
+                        box.en = item.en || box.en;
+                        box.th = item.th || box.th;
+                        box.pron = item.pron || box.pron;
+                        updatedCount++;
+                    }
+                });
+                alert(`นำเข้าคำศัพท์สำเร็จและจับคู่เข้ากล่องได้ ${updatedCount} กล่องครับ!`);
+                updateUI();
+                drawCanvas();
+            } catch (err) {
+                alert("รูปแบบ JSON ไม่ถูกต้องครับ โปรดตรวจสอบอีกครั้ง\\nError: " + err.message);
+            }
+        });
+
+        // Editor Logic
+        function updateUI() {
+            deleteBoxBtn.disabled = (selectedBoxIndex === null);
+            if (selectedBoxIndex !== null) {
+                boxEditor.style.opacity = '1';
+                boxEditor.style.pointerEvents = 'auto';
+                const box = boxes[selectedBoxIndex];
+                editBoxId.value = box.id;
+                editBoxEn.value = box.en || '';
+                editBoxTh.value = box.th || '';
+                editBoxPron.value = box.pron || '';
+            } else {
+                boxEditor.style.opacity = '0.5';
+                boxEditor.style.pointerEvents = 'none';
+                editBoxId.value = '';
+                editBoxEn.value = '';
+                editBoxTh.value = '';
+                editBoxPron.value = '';
+            }
+        }
+
+        // Live updating box data from sidebar
+        editBoxId.addEventListener('input', (e) => { if (selectedBoxIndex !== null) { boxes[selectedBoxIndex].id = e.target.value; drawCanvas(); } });
+        editBoxEn.addEventListener('input', (e) => { if (selectedBoxIndex !== null) { boxes[selectedBoxIndex].en = e.target.value; drawCanvas(); } });
+        editBoxTh.addEventListener('input', (e) => { if (selectedBoxIndex !== null) boxes[selectedBoxIndex].th = e.target.value; });
+        editBoxPron.addEventListener('input', (e) => { if (selectedBoxIndex !== null) boxes[selectedBoxIndex].pron = e.target.value; });
+
+        function drawCanvas() {
+            if (!isImageLoaded) return;
+            
+            ctx.clearRect(0, 0, interactiveCanvas.width, interactiveCanvas.height);
+            ctx.drawImage(img, 0, 0);
+            
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+            ctx.fillRect(0, 0, interactiveCanvas.width, interactiveCanvas.height);
+            
+            boxes.forEach((box, index) => {
+                const isSelected = (index === selectedBoxIndex);
+                const hasVocab = box.en !== ''; // Check if it has imported vocab
+                
+                ctx.clearRect(box.x, box.y, box.w, box.h);
+                ctx.drawImage(img, box.x, box.y, box.w, box.h, box.x, box.y, box.w, box.h);
+                
+                ctx.fillStyle = isSelected ? 'rgba(79, 70, 229, 0.1)' : 'rgba(0, 0, 0, 0.1)';
+                ctx.fillRect(box.x, box.y, box.w, box.h);
+                
+                // Color border green if has vocab, blue if selected, else gray
+                if (isSelected) ctx.strokeStyle = '#4F46E5';
+                else if (hasVocab) ctx.strokeStyle = '#10B981';
+                else ctx.strokeStyle = '#64748b';
+                
+                ctx.lineWidth = isSelected ? 4 : 2;
+                ctx.strokeRect(box.x, box.y, box.w, box.h);
+                
+                // Label background matches state
+                ctx.fillStyle = isSelected ? '#4F46E5' : (hasVocab ? '#10B981' : '#64748b');
+                ctx.fillRect(box.x, box.y, 40, 30);
+                
+                ctx.fillStyle = 'white';
+                ctx.font = 'bold 18px Arial';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(box.id, box.x + 20, box.y + 15);
+                
+                // Draw English word on canvas if available (for quick preview)
+                if (box.en) {
+                    ctx.fillStyle = '#1e293b';
+                    ctx.font = 'bold 16px Arial';
+                    ctx.textAlign = 'left';
+                    ctx.fillText(box.en, box.x + 45, box.y + 15);
+                }
+                
+                if (isSelected) {
+                    ctx.fillStyle = 'white';
+                    ctx.strokeStyle = '#4F46E5';
+                    ctx.lineWidth = 2;
+                    const hs = HANDLE_SIZE, half = hs/2;
+                    const drawHandle = (hx, hy) => { ctx.fillRect(hx-half, hy-half, hs, hs); ctx.strokeRect(hx-half, hy-half, hs, hs); };
+                    drawHandle(box.x, box.y);
+                    drawHandle(box.x + box.w, box.y);
+                    drawHandle(box.x, box.y + box.h);
+                    drawHandle(box.x + box.w, box.y + box.h);
+                }
+            });
+        }
+        
+        function getMousePos(canvas, evt) {
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            return { x: (evt.clientX - rect.left) * scaleX, y: (evt.clientY - rect.top) * scaleY };
+        }
+        
+        function hitTestHandles(box, x, y) {
+            const hs = HANDLE_SIZE, half = hs/2;
+            const isInside = (hx, hy) => (x >= hx - half && x <= hx + half && y >= hy - half && y <= hy + half);
+            if (isInside(box.x, box.y)) return 'nw';
+            if (isInside(box.x + box.w, box.y)) return 'ne';
+            if (isInside(box.x, box.y + box.h)) return 'sw';
+            if (isInside(box.x + box.w, box.y + box.h)) return 'se';
+            return null;
+        }
+
+        function hitTestBox(box, x, y) {
+            return (x >= box.x && x <= box.x + box.w && y >= box.y && y <= box.y + box.h);
+        }
+
+        interactiveCanvas.addEventListener('mousedown', (e) => {
+            if (!isImageLoaded) return;
+            interactiveCanvas.focus();
+            const pos = getMousePos(interactiveCanvas, e);
+            
+            if (selectedBoxIndex !== null) {
+                const handle = hitTestHandles(boxes[selectedBoxIndex], pos.x, pos.y);
+                if (handle) { isResizingBox = handle; return; }
+            }
+            
+            for (let i = boxes.length - 1; i >= 0; i--) {
+                if (hitTestBox(boxes[i], pos.x, pos.y)) {
+                    selectedBoxIndex = i;
+                    isDraggingBox = true;
+                    dragOffsetX = pos.x - boxes[i].x;
+                    dragOffsetY = pos.y - boxes[i].y;
+                    updateUI();
+                    drawCanvas();
+                    return;
+                }
+            }
+            
+            selectedBoxIndex = null;
+            updateUI();
+            drawCanvas();
+        });
+        
+        interactiveCanvas.addEventListener('mousemove', (e) => {
+            if (!isImageLoaded) return;
+            const pos = getMousePos(interactiveCanvas, e);
+            let cursor = 'default';
+            
+            if (selectedBoxIndex !== null) {
+                const handle = hitTestHandles(boxes[selectedBoxIndex], pos.x, pos.y);
+                if (handle === 'nw' || handle === 'se') cursor = 'nwse-resize';
+                else if (handle === 'ne' || handle === 'sw') cursor = 'nesw-resize';
+                else if (hitTestBox(boxes[selectedBoxIndex], pos.x, pos.y)) cursor = 'move';
+            } else {
+                for (let i = 0; i < boxes.length; i++) {
+                    if (hitTestBox(boxes[i], pos.x, pos.y)) { cursor = 'pointer'; break; }
+                }
+            }
+            interactiveCanvas.style.cursor = cursor;
+            
+            if (selectedBoxIndex === null) return;
+            const box = boxes[selectedBoxIndex];
+            
+            if (isDraggingBox) {
+                box.x = pos.x - dragOffsetX;
+                box.y = pos.y - dragOffsetY;
+                drawCanvas();
+            } else if (isResizingBox) {
+                if (isResizingBox === 'nw') {
+                    const newW = box.w + (box.x - pos.x), newH = box.h + (box.y - pos.y);
+                    if (newW > 20) { box.x = pos.x; box.w = newW; }
+                    if (newH > 20) { box.y = pos.y; box.h = newH; }
+                } else if (isResizingBox === 'ne') {
+                    const newW = pos.x - box.x, newH = box.h + (box.y - pos.y);
+                    if (newW > 20) box.w = newW;
+                    if (newH > 20) { box.y = pos.y; box.h = newH; }
+                } else if (isResizingBox === 'sw') {
+                    const newW = box.w + (box.x - pos.x), newH = pos.y - box.y;
+                    if (newW > 20) { box.x = pos.x; box.w = newW; }
+                    if (newH > 20) box.h = newH;
+                } else if (isResizingBox === 'se') {
+                    const newW = pos.x - box.x, newH = pos.y - box.y;
+                    if (newW > 20) box.w = newW;
+                    if (newH > 20) box.h = newH;
+                }
+                drawCanvas();
+            }
+        });
+        
+        interactiveCanvas.addEventListener('mouseup', () => { isDraggingBox = false; isResizingBox = null; });
+        interactiveCanvas.addEventListener('mouseleave', () => { isDraggingBox = false; isResizingBox = null; });
+        
+        // --- Directory Selection ---
+        selectFolderBtn.addEventListener('click', async () => {
+            try {
+                directoryHandle = await window.showDirectoryPicker({ mode: 'readwrite' });
+                if (directoryHandle.name !== 'vocab-tester') {
+                    const confirm = window.confirm(`⚠️ คำเตือน: คุณเลือกโฟลเดอร์ "${directoryHandle.name}" ซึ่งอาจจะไม่ใช่โฟลเดอร์หลัก\n\nกรุณาเลือกโฟลเดอร์ "vocab-tester" ที่อยู่นอกสุด เพื่อให้โปรแกรมอัปเดตไฟล์ data.js และสร้างรูปได้ถูกต้องครับ\n\nต้องการใช้โฟลเดอร์นี้ต่อไปหรือไม่? (ถ้าไม่แน่ใจให้กด Cancel แล้วเลือกใหม่)`);
+                    if (!confirm) {
+                        directoryHandle = null;
+                        return;
+                    }
+                }
+                folderStatus.style.display = 'inline-block';
+                saveAllBtn.style.display = 'inline-flex';
+                selectFolderBtn.innerText = '📁 เปลี่ยนโฟลเดอร์';
+            } catch (err) {
+                console.error(err);
+            }
+        });
+        
+        // --- Save Project ---
+        saveAllBtn.addEventListener('click', async () => {
+            if (boxes.length === 0) { alert("ไม่มีข้อมูลกล่องให้เซฟครับ"); return; }
+            if (!directoryHandle) { alert("กรุณาเลือกโฟลเดอร์ vocab-tester ก่อนครับ"); return; }
+            
+            const catId = document.getElementById('catId').value.trim().toLowerCase();
+            const catName = document.getElementById('catName').value.trim();
+            if (!catId || !catName) {
+                alert("กรุณาตั้งค่า 'รหัสโฟลเดอร์' และ 'ชื่อหมวดหมู่' ในส่วนที่ 1 ให้เรียบร้อยก่อนเซฟครับ");
+                return;
+            }
+
+            saveAllBtn.innerText = '⏳ กำลังประมวลผล...';
+            saveAllBtn.disabled = true;
+            
+            try {
+                // 1. Prepare images directory
+                const imagesDir = await directoryHandle.getDirectoryHandle('images', { create: true });
+                const catDir = await imagesDir.getDirectoryHandle(catId, { create: true });
+                
+                // Sort boxes for data order
+                const sortedBoxes = [...boxes].sort((a, b) => a.id - b.id);
+                const categoryItems = [];
+                
+                previewGrid.innerHTML = '';
+                
+                // 2. Crop and save images
+                for (const box of sortedBoxes) {
+                    const tempCanvas = document.createElement('canvas');
+                    tempCanvas.width = box.w;
+                    tempCanvas.height = box.h;
+                    const tCtx = tempCanvas.getContext('2d');
+                    tCtx.drawImage(img, box.x, box.y, box.w, box.h, 0, 0, box.w, box.h);
+                    
+                    const fileName = `${box.id}.png`;
+                    
+                    // Show Preview
+                    const dataUrl = tempCanvas.toDataURL('image/png');
+                    const itemDiv = document.createElement('div');
+                    itemDiv.className = 'crop-item';
+                    itemDiv.innerHTML = `
+                        <div class="file-name">${fileName}</div>
+                        <img src="${dataUrl}">
+                        <div class="vocab-info">${box.en || '-'} (${box.th || '-'})</div>
+                    `;
+                    previewGrid.appendChild(itemDiv);
+                    
+                    // Save file
+                    const fileHandle = await catDir.getFileHandle(fileName, { create: true });
+                    const writable = await fileHandle.createWritable();
+                    const blob = await new Promise(resolve => tempCanvas.toBlob(resolve, 'image/png'));
+                    await writable.write(blob);
+                    await writable.close();
+                    
+                    // Add to data array
+                    categoryItems.push({
+                        id: parseInt(box.id) || box.id,
+                        en: box.en.trim(),
+                        th: box.th.trim(),
+                        pron: box.pron.trim()
+                    });
+                }
+                
+                // 3. Update data.js
+                // Merge with existing appData
+                if (!appData[catId]) {
+                    appData[catId] = {
+                        id: catId,
+                        name: catName,
+                        emoji: document.getElementById('catEmoji').value.trim() || "✨",
+                        desc: document.getElementById('catDesc').value.trim() || "",
+                        items: []
+                    };
+                } else {
+                    appData[catId].name = catName || appData[catId].name;
+                    const e = document.getElementById('catEmoji').value.trim();
+                    const d = document.getElementById('catDesc').value.trim();
+                    if (e) appData[catId].emoji = e;
+                    if (d) appData[catId].desc = d;
+                }
+                
+                // Merge items instead of replacing everything
+                categoryItems.forEach(newItem => {
+                    const existingIndex = appData[catId].items.findIndex(item => item.id === newItem.id);
+                    if (existingIndex >= 0) {
+                        appData[catId].items[existingIndex] = newItem;
+                    } else {
+                        appData[catId].items.push(newItem);
+                    }
+                });
+                // Sort to keep it clean
+                appData[catId].items.sort((a, b) => a.id - b.id);
+                
+                const jsonString = JSON.stringify(appData, null, 4);
+                const jsContent = `const categoriesData = ${jsonString};`;
+                
+                const dataJsHandle = await directoryHandle.getFileHandle('data.js', { create: true });
+                const dataWritable = await dataJsHandle.createWritable();
+                await dataWritable.write(jsContent);
+                await dataWritable.close();
+                
+                alert(`✅ บันทึก Project สำเร็จ!\\n- หั่นและเซฟรูปทั้งหมดลงในโฟลเดอร์ images/${catId}/ เรียบร้อย\\n- อัปเดตข้อมูลคำศัพท์ลงในไฟล์ data.js เรียบร้อย\\n\\nเปิดหน้า index.html ใช้งานได้เลยครับ!`);
+                
+            } catch (err) {
+                console.error("Error saving project:", err);
+                alert("เกิดข้อผิดพลาดในการเซฟโปรเจกต์: " + err.message);
+            }
+            
+            saveAllBtn.innerText = '🚀 2. Save Project ทั้งหมด';
+            saveAllBtn.disabled = false;
+        });
+    </script>
+</body>
+</html>
