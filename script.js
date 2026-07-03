@@ -649,6 +649,15 @@ function speakWord(text) {
         const utterance = new SpeechSynthesisUtterance(text);
         utterance.lang = 'en-US';
         utterance.rate = 0.9; // slightly slower for students
+        
+        const voices = window.speechSynthesis.getVoices();
+        let enVoice = voices.find(v => v.lang.startsWith('en') && (v.name.includes('Google') || v.name.includes('Siri') || v.name.includes('Samantha')));
+        if (!enVoice) enVoice = voices.find(v => v.lang.startsWith('en'));
+        
+        if (enVoice) {
+            utterance.voice = enVoice;
+        }
+        
         window.speechSynthesis.speak(utterance);
     } else {
         alert("ขออภัย เบราว์เซอร์ของคุณไม่รองรับระบบอ่านออกเสียง");
@@ -918,9 +927,10 @@ function speakWord(text) {
         utterance.lang = 'en-US';
         utterance.rate = 0.9; // Slightly slower for clearer pronunciation
         
-        // Try to find a good English voice
         const voices = window.speechSynthesis.getVoices();
-        const enVoice = voices.find(v => v.lang.startsWith('en-') && (v.name.includes('Google') || v.name.includes('Female')));
+        let enVoice = voices.find(v => v.lang.startsWith('en') && (v.name.includes('Google') || v.name.includes('Siri') || v.name.includes('Samantha')));
+        if (!enVoice) enVoice = voices.find(v => v.lang.startsWith('en'));
+        
         if (enVoice) {
             utterance.voice = enVoice;
         }
