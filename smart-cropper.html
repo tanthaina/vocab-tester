@@ -81,7 +81,12 @@
                     <label>ชื่อไฟล์รูปแรกสุด (ID)</label>
                     <input type="number" id="startId" value="1" min="1">
                 </div>
-                <button class="btn-primary" id="generateGridBtn" style="margin-bottom: 2px;">🤖 สร้างกล่องอัตโนมัติ</button>
+                <div class="input-group">
+                    <label title="ระยะห่างในการรวมตัวอักษรหรือภาพเป็นกลุ่มเดียวกัน (ถ้าคำศัพท์อยู่ติดกันเกินไปให้ลดค่าลง)">ความห่างรวมกลุ่ม (px)</label>
+                    <input type="number" id="detectPadding" value="30" min="5">
+                </div>
+                <button class="btn-primary" id="generateGridBtn" style="margin-bottom: 2px;">🤖 สร้างตาราง</button>
+                <button class="btn-success" id="autoDetectBtn" style="margin-bottom: 2px;">🔍 ตรวจจับอัตโนมัติ</button>
             </div>
             
             <div class="toolbar" id="toolbar" style="display: none; align-items: center; gap: 10px; flex-wrap: wrap;">
@@ -96,7 +101,7 @@
             
             <div style="background: #fff; padding: 15px; border-radius: 8px; font-size: 0.95rem; color: #444; border-left: 4px solid #fbbc04; margin-top: 15px;">
                 💡 <b>วิธีใช้งาน:</b> 
-                1. อัปโหลดรูป -> กด <b>สร้างกล่องอัตโนมัติ</b> <br>
+                1. อัปโหลดรูป -> กด <b>🔍 ตรวจจับอัตโนมัติ</b> (ปรับความห่างรวมกลุ่มได้) หรือ สร้างตาราง <br>
                 2. <b>คลิกที่กล่องสีน้ำเงิน</b> เพื่อเลือกลากย้ายตำแหน่ง หรือดึงที่มุมกล่องเพื่อย่อขยายขนาด <br>
                 3. หากมีกล่องเกินมา ให้คลิกเลือกกล่องนั้นแล้วกด <b>ปุ่ม Delete</b> บนคีย์บอร์ด (หรือกดปุ่มลบกล่อง)
             </div>
@@ -129,7 +134,9 @@
         const gridRows = document.getElementById('gridRows');
         const gridCols = document.getElementById('gridCols');
         const startId = document.getElementById('startId');
+        const detectPadding = document.getElementById('detectPadding');
         const generateGridBtn = document.getElementById('generateGridBtn');
+        const autoDetectBtn = document.getElementById('autoDetectBtn');
         const addBoxBtn = document.getElementById('addBoxBtn');
         const deleteBoxBtn = document.getElementById('deleteBoxBtn');
         const renumberBtn = document.getElementById('renumberBtn');
@@ -219,6 +226,149 @@
             selectedBoxIndex = null;
             updateUI();
             drawCanvas();
+        }
+
+        autoDetectBtn.addEventListener('click', autoDetectObjects);
+
+        function autoDetectObjects() {
+            if (!isImageLoaded) return;
+            
+            // 1. Get Image Data and Downsample for speed
+            const width = img.width;
+            const height = img.height;
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = width;
+            tempCanvas.height = height;
+            const tCtx = tempCanvas.getContext('2d');
+            tCtx.drawImage(img, 0, 0);
+            const imageData = tCtx.getImageData(0, 0, width, height);
+            const data = imageData.data;
+
+            const scaleDown = 4;
+            const sWidth = Math.ceil(width / scaleDown);
+            const sHeight = Math.ceil(height / scaleDown);
+            let sBinary = new Uint8Array(sWidth * sHeight);
+            
+            const threshold = 240; 
+            for (let y = 0; y < height; y += scaleDown) {
+                for (let x = 0; x < width; x += scaleDown) {
+                    const i = (y * width + x) * 4;
+                    const r = data[i], g = data[i+1], b = data[i+2];
+                    if (r < threshold || g < threshold || b < threshold) {
+                        sBinary[Math.floor(y / scaleDown) * sWidth + Math.floor(x / scaleDown)] = 1;
+                    }
+                }
+            }
+            
+            // 2. Find connected components (Initial boxes) via BFS
+            let visited = new Uint8Array(sWidth * sHeight);
+            let initialBoxes = [];
+            
+            for (let y = 0; y < sHeight; y++) {
+                for (let x = 0; x < sWidth; x++) {
+                    let idx = y * sWidth + x;
+                    if (sBinary[idx] && !visited[idx]) {
+                        let queue = [[x, y]];
+                        visited[idx] = 1;
+                        let minX = x, maxX = x, minY = y, maxY = y;
+                        
+                        let head = 0;
+                        while(head < queue.length) {
+                            let [cx, cy] = queue[head++];
+                            if (cx < minX) minX = cx;
+                            if (cx > maxX) maxX = cx;
+                            if (cy < minY) minY = cy;
+                            if (cy > maxY) maxY = cy;
+                            
+                            for (let dy = -1; dy <= 1; dy++) {
+                                for (let dx = -1; dx <= 1; dx++) {
+                                    if (dx === 0 && dy === 0) continue;
+                                    let nx = cx + dx, ny = cy + dy;
+                                    if (nx >= 0 && nx < sWidth && ny >= 0 && ny < sHeight) {
+                                        let nIdx = ny * sWidth + nx;
+                                        if (sBinary[nIdx] && !visited[nIdx]) {
+                                            visited[nIdx] = 1;
+                                            queue.push([nx, ny]);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        initialBoxes.push({minX, minY, maxX, maxY});
+                    }
+                }
+            }
+            
+            // 3. Merge close boxes
+            const pad = Math.ceil((parseInt(detectPadding.value) || 30) / scaleDown);
+            
+            function boxesOverlap(b1, b2, padding) {
+                return !(b1.maxX + padding < b2.minX || 
+                         b1.minX - padding > b2.maxX || 
+                         b1.maxY + padding < b2.minY || 
+                         b1.minY - padding > b2.maxY);
+            }
+            
+            let merged;
+            do {
+                merged = false;
+                for (let i = 0; i < initialBoxes.length; i++) {
+                    for (let j = i + 1; j < initialBoxes.length; j++) {
+                        if (boxesOverlap(initialBoxes[i], initialBoxes[j], pad)) {
+                            initialBoxes[i].minX = Math.min(initialBoxes[i].minX, initialBoxes[j].minX);
+                            initialBoxes[i].minY = Math.min(initialBoxes[i].minY, initialBoxes[j].minY);
+                            initialBoxes[i].maxX = Math.max(initialBoxes[i].maxX, initialBoxes[j].maxX);
+                            initialBoxes[i].maxY = Math.max(initialBoxes[i].maxY, initialBoxes[j].maxY);
+                            initialBoxes.splice(j, 1);
+                            merged = true;
+                            break;
+                        }
+                    }
+                    if (merged) break;
+                }
+            } while (merged);
+            
+            // 4. Filter small noise and add aesthetic padding
+            const minBoxSize = Math.ceil(20 / scaleDown);
+            let finalBoxes = [];
+            const boxPadding = 15;
+            
+            for (const b of initialBoxes) {
+                const w = b.maxX - b.minX;
+                const h = b.maxY - b.minY;
+                if (w > minBoxSize && h > minBoxSize) {
+                    finalBoxes.push({
+                        x: Math.max(0, (b.minX * scaleDown) - boxPadding),
+                        y: Math.max(0, (b.minY * scaleDown) - boxPadding),
+                        w: Math.min(width - (b.minX * scaleDown) + boxPadding, (w * scaleDown) + boxPadding * 2),
+                        h: Math.min(height - (b.minY * scaleDown) + boxPadding, (h * scaleDown) + boxPadding * 2)
+                    });
+                }
+            }
+            
+            // 5. Sort boxes for natural ID numbering (Top-Down, Left-Right)
+            finalBoxes.sort((a, b) => {
+                if (Math.abs(a.y - b.y) > 50) return a.y - b.y;
+                return a.x - b.x;
+            });
+            
+            // 6. Assign IDs
+            let currentId = parseInt(startId.value) || 1;
+            boxes = finalBoxes.map(b => ({
+                id: currentId++,
+                x: b.x, y: b.y, w: b.w, h: b.h
+            }));
+            
+            highestId = currentId;
+            selectedBoxIndex = null;
+            updateUI();
+            drawCanvas();
+            
+            if(boxes.length === 0) {
+                alert("ไม่พบกลุ่มวัตถุบนภาพ (ลองตรวจสอบรูปภาพว่าพื้นหลังสีขาวหรือไม่)");
+            } else {
+                alert(`ตรวจพบคำศัพท์/รูปภาพทั้งหมด ${boxes.length} กลุ่ม!`);
+            }
         }
 
         addBoxBtn.addEventListener('click', () => {

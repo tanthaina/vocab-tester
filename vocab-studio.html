@@ -104,23 +104,50 @@
             <div class="flex-row" style="align-items: flex-start;">
                 <div style="display: flex; flex-direction: column; gap: 15px; flex-grow: 1;">
                     <div class="input-group">
-                        <label>เลือกรูปภาพหน้าหนังสือ</label>
-                        <input type="file" id="imageLoader" accept="image/*">
+                        <label>1. เลือกรูปภาพหน้าหนังสือ</label>
+                        <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                            <label for="imageLoader" class="btn-primary" style="cursor: pointer; padding: 12px 24px; font-size: 1.1rem; border-radius: 8px; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                                📸 คลิกเพื่ออัปโหลดรูปภาพ (Upload Image)
+                            </label>
+                            <input type="file" id="imageLoader" accept="image/*" style="display: none;">
+                            <button class="btn-outline" id="rotateImgBtn" style="display: none; padding: 6px 12px; font-size: 0.9rem;">🔄 หมุนรูป 90° (Rotate)</button>
+                        </div>
                     </div>
                     <div class="flex-row">
-                        <div class="input-group">
-                            <label>แถว (Rows)</label>
-                            <input type="number" id="gridRows" value="5" min="1">
-                        </div>
-                        <div class="input-group">
-                            <label>คอลัมน์ (Cols)</label>
-                            <input type="number" id="gridCols" value="2" min="1">
-                        </div>
                         <div class="input-group">
                             <label>รหัสเริ่มต้น (Start ID)</label>
                             <input type="number" id="startId" value="1" min="1">
                         </div>
-                        <button class="btn-outline" id="generateGridBtn" style="margin-bottom: 2px;">🤖 สร้างกล่องอัตโนมัติ</button>
+                        <button class="btn-success" id="autoDetectBtn" style="margin-bottom: 2px;">✨ 1. ค้นหากล่องอัตโนมัติ (Auto-Detect)</button>
+                    </div>
+                    
+                    <!-- Advanced/Manual tools -->
+                    <div style="margin-top: 5px; padding-top: 15px; border-top: 1px dashed #cbd5e1;">
+                        <span style="font-size: 0.9rem; font-weight: bold; color: #64748b; margin-bottom: 10px; display: block;">หรือสร้างกล่องเอง:</span>
+                        <div class="flex-row">
+                            <div class="input-group">
+                                <label>โหมด (Mode)</label>
+                                <select id="toolModeSelect" style="padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 4px; font-family: inherit;">
+                                    <option value="drag">✥ ลากอิสระ</option>
+                                    <option value="click">🎯 จิ้มวาง (One-Click)</option>
+                                </select>
+                            </div>
+                            <div class="input-group" id="clickSizeContainer" style="display: none;">
+                                <label>ขนาดกล่องจิ้มวาง (กว้างxสูง)</label>
+                                <div style="display: flex; gap: 5px;">
+                                    <input type="number" id="clickBoxW" value="180" title="กว้าง" style="width: 60px;">
+                                    <input type="number" id="clickBoxH" value="180" title="สูง" style="width: 60px;">
+                                </div>
+                            </div>
+                            <div class="input-group" id="gridSizeContainer">
+                                <label>สร้างแบบตาราง (แถวxคอลัมน์)</label>
+                                <div style="display: flex; gap: 5px;">
+                                    <input type="number" id="gridRows" value="5" title="แถว" style="width: 60px;">
+                                    <input type="number" id="gridCols" value="2" title="คอลัมน์" style="width: 60px;">
+                                </div>
+                            </div>
+                            <button class="btn-outline" id="generateGridBtn" style="margin-bottom: 2px;">สร้างตาราง</button>
+                        </div>
                     </div>
                 </div>
                 
@@ -134,10 +161,11 @@
         
         <div class="toolbar" id="toolbar" style="display: none;">
             <button class="btn-outline" id="addBoxBtn">➕ เพิ่มกล่องใหม่</button>
-            <button class="btn-danger" id="deleteBoxBtn" disabled>🗑️ ลบกล่อง</button>
-            <button class="btn-warning" id="renumberBtn">🔢 รันเลขกล่องใหม่ทั้งหมด</button>
+            <button class="btn-danger" id="deleteBoxBtn" disabled>🗑️ ลบกล่องที่เลือก</button>
+            <button class="btn-danger" id="deleteAllBoxesBtn" style="background: #991b1b;">🗑️ ลบกล่องทั้งหมด</button>
+            <button class="btn-warning" id="renumberBtn">🔢 รันเลขกล่องใหม่</button>
             <span style="color: #4F46E5; margin-left: 10px; font-size: 0.9rem; font-weight: bold;">
-                👉 คลิกที่กล่องเพื่อขยับ/ย่อขยาย หรือแก้ไขคำศัพท์ด้านขวามือ
+                👉 คลิกที่กล่องเพื่อขยับ/ย่อขยาย
             </span>
         </div>
 
@@ -184,8 +212,16 @@
                     </p>
                 </div>
                 <div style="display: flex; gap: 10px; align-items: center;">
+                    <div class="input-group" style="margin-right: 15px;">
+                        <label style="color: #166534; margin-bottom: 2px;">ขยายความชัดภาพ (Upscale)</label>
+                        <select id="imageScaleSelect" style="padding: 6px; border: 1px solid #bbf7d0; border-radius: 4px; font-weight: bold; color: #166534;">
+                            <option value="1">ขนาดปกติ (1x)</option>
+                            <option value="2" selected>ชัดขึ้น 2 เท่า (2x - แนะนำ)</option>
+                            <option value="3">ชัดสุดๆ 3 เท่า (3x)</option>
+                        </select>
+                    </div>
                     <span id="folderStatus" class="status-badge">✅ เลือกโฟลเดอร์สำเร็จ</span>
-                    <button class="btn-outline" id="selectFolderBtn" style="border-color: #166534; color: #166534;">📂 1. เลือกโฟลเดอร์หลัก (vocab-tester)</button>
+                    <button class="btn-outline" id="selectFolderBtn" style="border-color: #166534; color: #166534;">📂 1. เลือกโฟลเดอร์หลัก</button>
                     <button class="btn-success" id="saveAllBtn" style="display: none; font-size: 1.1rem; padding: 12px 24px;">🚀 2. Save Project ทั้งหมด</button>
                 </div>
             </div>
@@ -205,10 +241,19 @@
         const gridRows = document.getElementById('gridRows');
         const gridCols = document.getElementById('gridCols');
         const startId = document.getElementById('startId');
+        const autoDetectBtn = document.getElementById('autoDetectBtn');
+        const toolModeSelect = document.getElementById('toolModeSelect');
+        const clickSizeContainer = document.getElementById('clickSizeContainer');
+        const clickBoxW = document.getElementById('clickBoxW');
+        const clickBoxH = document.getElementById('clickBoxH');
+        const gridSizeContainer = document.getElementById('gridSizeContainer');
+        
         const generateGridBtn = document.getElementById('generateGridBtn');
         const addBoxBtn = document.getElementById('addBoxBtn');
         const deleteBoxBtn = document.getElementById('deleteBoxBtn');
+        const deleteAllBoxesBtn = document.getElementById('deleteAllBoxesBtn');
         const renumberBtn = document.getElementById('renumberBtn');
+        const rotateImgBtn = document.getElementById('rotateImgBtn');
         const toolbar = document.getElementById('toolbar');
         
         const aiJsonInput = document.getElementById('aiJsonInput');
@@ -254,24 +299,74 @@
             alert("เบราว์เซอร์ของคุณไม่รองรับระบบเซฟไฟล์อัตโนมัติ (File System Access API)\\nโปรดใช้ Google Chrome หรือ Edge");
         }
 
+        img.onload = () => {
+            interactiveCanvas.width = img.width;
+            interactiveCanvas.height = img.height;
+            isImageLoaded = true;
+            placeholderText.style.display = 'none';
+            interactiveCanvas.style.display = 'block';
+            toolbar.style.display = 'flex';
+            rotateImgBtn.style.display = 'inline-flex';
+            drawCanvas();
+        };
+
         imageLoader.addEventListener('change', (e) => {
             const reader = new FileReader();
             reader.onload = (event) => {
+                const shouldAutoGrid = (boxes.length === 0);
+                const defaultOnload = img.onload;
+                
                 img.onload = () => {
-                    interactiveCanvas.width = img.width;
-                    interactiveCanvas.height = img.height;
-                    isImageLoaded = true;
-                    placeholderText.style.display = 'none';
-                    interactiveCanvas.style.display = 'block';
-                    toolbar.style.display = 'flex';
-                    generateAutoGrid();
-                }
+                    defaultOnload();
+                    if (shouldAutoGrid) generateAutoGrid();
+                    img.onload = defaultOnload; // restore handler
+                };
+                
                 img.src = event.target.result;
             }
             if (e.target.files[0]) {
                 reader.readAsDataURL(e.target.files[0]);
             }
         });
+        
+        rotateImgBtn.addEventListener('click', () => {
+            if (!isImageLoaded) return;
+            const tempCanvas = document.createElement('canvas');
+            // Swap width and height for 90 degree rotation
+            tempCanvas.width = img.height;
+            tempCanvas.height = img.width;
+            const tCtx = tempCanvas.getContext('2d');
+            
+            tCtx.translate(tempCanvas.width / 2, tempCanvas.height / 2);
+            tCtx.rotate(90 * Math.PI / 180);
+            tCtx.drawImage(img, -img.width / 2, -img.height / 2);
+            
+            img.src = tempCanvas.toDataURL('image/png');
+        });
+
+        deleteAllBoxesBtn.addEventListener('click', () => {
+            if (boxes.length === 0) return;
+            if (confirm("คุณแน่ใจหรือไม่ว่าต้องการลบกล่องทั้งหมดบนหน้าจอนี้?")) {
+                boxes = [];
+                selectedBoxIndex = null;
+                updateUI();
+                drawCanvas();
+            }
+        });
+
+        toolModeSelect.addEventListener('change', (e) => {
+            if (e.target.value === 'click') {
+                clickSizeContainer.style.display = 'flex';
+                gridSizeContainer.style.display = 'none';
+                generateGridBtn.style.display = 'none';
+            } else {
+                clickSizeContainer.style.display = 'none';
+                gridSizeContainer.style.display = 'flex';
+                generateGridBtn.style.display = 'flex';
+            }
+        });
+
+        autoDetectBtn.addEventListener('click', autoDetectBlobs);
 
         generateGridBtn.addEventListener('click', generateAutoGrid);
 
@@ -303,6 +398,164 @@
             selectedBoxIndex = null;
             updateUI();
             drawCanvas();
+        }
+
+        function autoDetectBlobs() {
+            if (!isImageLoaded) { alert("กรุณาอัปโหลดรูปหน้าหนังสือเพื่อเริ่มค้นหาครับ"); return; }
+            
+            autoDetectBtn.innerText = '⏳ กำลังค้นหา...';
+            autoDetectBtn.disabled = true;
+            
+            // ใช้ setTimeout เพื่อให้ UI ได้อัปเดตคำว่า กำลังค้นหา ก่อนเริ่มคำนวณหนักๆ
+            setTimeout(() => {
+                try {
+                    const tempCanvas = document.createElement('canvas');
+                    const w = img.width;
+                    const h = img.height;
+                    tempCanvas.width = w;
+                    tempCanvas.height = h;
+                    const tCtx = tempCanvas.getContext('2d');
+                    tCtx.drawImage(img, 0, 0);
+                    
+                    const imgData = tCtx.getImageData(0, 0, w, h);
+                    const data = imgData.data;
+                    
+                    // แปลงเป็นขาวดำแบบเร็วๆ (Threshold)
+                    // สมมติให้พิกเซลที่สว่างกว่า 210 เป็นพื้นหลัง (0) และส่วนอื่นเป็นวัตถุ (1)
+                    const binary = new Uint8Array(w * h);
+                    for (let i = 0; i < data.length; i += 4) {
+                        const r = data[i], g = data[i+1], b = data[i+2];
+                        const isBg = (r > 210 && g > 210 && b > 210);
+                        binary[i/4] = isBg ? 0 : 1;
+                    }
+                    
+                    const visited = new Uint8Array(w * h);
+                    const blobs = [];
+                    const step = 4; // Scan step to speed up finding seeds
+                    
+                    const getIdx = (x, y) => y * w + x;
+                    
+                    for (let y = 0; y < h; y += step) {
+                        for (let x = 0; x < w; x += step) {
+                            const idx = getIdx(x, y);
+                            if (binary[idx] === 1 && visited[idx] === 0) {
+                                // BFS to find blob extent
+                                let minX = x, maxX = x, minY = y, maxY = y;
+                                const queue = [x, y];
+                                visited[idx] = 1;
+                                let area = 0;
+                                let head = 0;
+                                
+                                while (head < queue.length) {
+                                    const cx = queue[head++];
+                                    const cy = queue[head++];
+                                    area++;
+                                    
+                                    if (cx < minX) minX = cx;
+                                    if (cx > maxX) maxX = cx;
+                                    if (cy < minY) minY = cy;
+                                    if (cy > maxY) maxY = cy;
+                                    
+                                    const neighbors = [
+                                        [cx-1, cy], [cx+1, cy], [cx, cy-1], [cx, cy+1],
+                                        [cx-2, cy], [cx+2, cy], [cx, cy-2], [cx, cy+2] // broader connection for text
+                                    ];
+                                    
+                                    for (let n = 0; n < neighbors.length; n++) {
+                                        const nx = neighbors[n][0], ny = neighbors[n][1];
+                                        if (nx >= 0 && nx < w && ny >= 0 && ny < h) {
+                                            const nIdx = getIdx(nx, ny);
+                                            if (binary[nIdx] === 1 && visited[nIdx] === 0) {
+                                                visited[nIdx] = 1;
+                                                queue.push(nx, ny);
+                                            }
+                                        }
+                                    }
+                                }
+                                
+                                // เก็บเฉพาะ blob ที่ใหญ่พอ (ตัดจุดรบกวน)
+                                if (area > 300) {
+                                    const pad = 20; // Padding
+                                    blobs.push({
+                                        x: Math.max(0, minX - pad),
+                                        y: Math.max(0, minY - pad),
+                                        w: Math.min(w - minX + (pad * 2), w),
+                                        h: Math.min(h - minY + (pad * 2), h)
+                                    });
+                                }
+                            }
+                        }
+                    }
+                    
+                    // Group close blobs (Merge)
+                    let merged = true;
+                    while (merged) {
+                        merged = false;
+                        for (let i = 0; i < blobs.length; i++) {
+                            for (let j = i + 1; j < blobs.length; j++) {
+                                const b1 = blobs[i];
+                                const b2 = blobs[j];
+                                const margin = 50; // Distance to merge (e.g. merge text with image)
+                                
+                                const overlapX = b1.x < b2.x + b2.w + margin && b1.x + b1.w + margin > b2.x;
+                                const overlapY = b1.y < b2.y + b2.h + margin && b1.y + b1.h + margin > b2.y;
+                                
+                                if (overlapX && overlapY) {
+                                    const newX = Math.min(b1.x, b2.x);
+                                    const newY = Math.min(b1.y, b2.y);
+                                    const newW = Math.max(b1.x + b1.w, b2.x + b2.w) - newX;
+                                    const newH = Math.max(b1.y + b1.h, b2.y + b2.h) - newY;
+                                    
+                                    b1.x = newX; b1.y = newY; b1.w = newW; b1.h = newH;
+                                    blobs.splice(j, 1);
+                                    merged = true;
+                                    break;
+                                }
+                            }
+                            if (merged) break;
+                        }
+                    }
+                    
+                    // Remove extremely large blobs (e.g., page border)
+                    const maxArea = (w * h) * 0.4;
+                    const finalBlobs = blobs.filter(b => (b.w * b.h) < maxArea);
+                    
+                    if (finalBlobs.length > 0) {
+                        finalBlobs.sort((a, b) => {
+                            if (Math.abs(a.y - b.y) > 60) return a.y - b.y;
+                            return a.x - b.x;
+                        });
+                        
+                        let startNum = parseInt(startId.value) || 1;
+                        if (boxes.length > 0) {
+                            if (confirm("ต้องการล้างกล่องที่มีอยู่เดิม แล้วใช้อันใหม่นี้หรือไม่? (กด Cancel เพื่อรวมกล่องใหม่เข้ากับของเดิม)")) {
+                                boxes = [];
+                            }
+                        }
+                        
+                        finalBlobs.forEach(b => {
+                            boxes.push({
+                                id: startNum++,
+                                x: b.x, y: b.y, w: b.w, h: b.h,
+                                en: '', th: '', pron: ''
+                            });
+                        });
+                        highestId = startNum;
+                        selectedBoxIndex = null;
+                        updateUI();
+                        drawCanvas();
+                        alert(`🎉 AI ค้นพบ ${finalBlobs.length} รูปแบบอัตโนมัติ!`);
+                    } else {
+                        alert("ไม่พบรูปภาพครับ อาจเพราะภาพพื้นหลังไม่ขาว หรือลายเส้นจางเกินไป แนะนำให้ใช้โหมด 'จิ้มวาง' แทนครับ");
+                    }
+                } catch (e) {
+                    console.error(e);
+                    alert("เกิดข้อผิดพลาด: " + e.message);
+                } finally {
+                    autoDetectBtn.innerText = '✨ 1. ค้นหากล่องอัตโนมัติ (Auto-Detect)';
+                    autoDetectBtn.disabled = false;
+                }
+            }, 50);
         }
 
         addBoxBtn.addEventListener('click', () => {
@@ -364,18 +617,62 @@
                 const parsed = JSON.parse(rawJson);
                 if (!Array.isArray(parsed)) throw new Error("JSON must be an array");
                 
-                let updatedCount = 0;
-                parsed.forEach(item => {
-                    // Find box with matching ID
-                    const box = boxes.find(b => b.id == item.id);
-                    if (box) {
-                        box.en = item.en || box.en;
-                        box.th = item.th || box.th;
-                        box.pron = item.pron || box.pron;
-                        updatedCount++;
+                const hasCoords = parsed.length > 0 && parsed[0].x !== undefined;
+                
+                if (hasCoords) {
+                    if (boxes.length > 0) {
+                        if (confirm("ข้อมูล JSON มีพิกัดกล่องมาด้วย ต้องการล้างกล่องเดิมทั้งหมดแล้วใช้พิกัดนี้สร้างใหม่เลยหรือไม่?")) {
+                            boxes = [];
+                        }
                     }
-                });
-                alert(`นำเข้าคำศัพท์สำเร็จและจับคู่เข้ากล่องได้ ${updatedCount} กล่องครับ!`);
+                    
+                    let addedCount = 0;
+                    parsed.forEach(item => {
+                        // If replacing or it doesn't exist, just push
+                        // But wait, if user didn't clear, maybe it's just adding to existing?
+                        // Simple approach: just push as new box, or update if id matches.
+                        let box = boxes.find(b => b.id == item.id);
+                        if (box) {
+                            box.x = item.x !== undefined ? item.x : box.x;
+                            box.y = item.y !== undefined ? item.y : box.y;
+                            box.w = item.w !== undefined ? item.w : box.w;
+                            box.h = item.h !== undefined ? item.h : box.h;
+                            box.en = item.en || box.en;
+                            box.th = item.th || box.th;
+                            box.pron = item.pron || box.pron;
+                        } else {
+                            boxes.push({
+                                id: item.id || highestId++,
+                                x: item.x || 0,
+                                y: item.y || 0,
+                                w: item.w || 100,
+                                h: item.h || 100,
+                                en: item.en || '',
+                                th: item.th || '',
+                                pron: item.pron || ''
+                            });
+                        }
+                        addedCount++;
+                    });
+                    
+                    if (boxes.length > 0) {
+                        highestId = Math.max(...boxes.map(b => parseInt(b.id) || 0)) + 1;
+                    }
+                    alert(`สร้างกล่องและนำเข้าคำศัพท์สำเร็จ ${addedCount} กล่องครับ!`);
+                } else {
+                    let updatedCount = 0;
+                    parsed.forEach(item => {
+                        const box = boxes.find(b => b.id == item.id);
+                        if (box) {
+                            box.en = item.en || box.en;
+                            box.th = item.th || box.th;
+                            box.pron = item.pron || box.pron;
+                            updatedCount++;
+                        }
+                    });
+                    alert(`นำเข้าคำศัพท์สำเร็จและจับคู่เข้ากล่องได้ ${updatedCount} กล่องครับ!`);
+                }
+                
                 updateUI();
                 drawCanvas();
             } catch (err) {
@@ -512,6 +809,32 @@
                 }
             }
             
+            if (toolModeSelect.value === 'click') {
+                let startNum = highestId;
+                if (boxes.length === 0) startNum = parseInt(startId.value) || 1;
+                
+                const boxW = parseInt(clickBoxW.value) || 180;
+                const boxH = parseInt(clickBoxH.value) || 180;
+                
+                boxes.push({
+                    id: startNum,
+                    x: Math.max(0, pos.x - (boxW / 2)),
+                    y: Math.max(0, pos.y - (boxH / 2)),
+                    w: boxW, h: boxH,
+                    en: '', th: '', pron: ''
+                });
+                highestId = startNum + 1;
+                selectedBoxIndex = boxes.length - 1;
+                
+                isDraggingBox = true;
+                dragOffsetX = boxW / 2;
+                dragOffsetY = boxH / 2;
+                
+                updateUI();
+                drawCanvas();
+                return;
+            }
+            
             selectedBoxIndex = null;
             updateUI();
             drawCanvas();
@@ -612,12 +935,20 @@
                 previewGrid.innerHTML = '';
                 
                 // 2. Crop and save images
+                const scale = parseInt(document.getElementById('imageScaleSelect').value) || 2;
+                
                 for (const box of sortedBoxes) {
                     const tempCanvas = document.createElement('canvas');
-                    tempCanvas.width = box.w;
-                    tempCanvas.height = box.h;
+                    tempCanvas.width = box.w * scale;
+                    tempCanvas.height = box.h * scale;
                     const tCtx = tempCanvas.getContext('2d');
-                    tCtx.drawImage(img, box.x, box.y, box.w, box.h, 0, 0, box.w, box.h);
+                    
+                    if (scale > 1) {
+                        tCtx.imageSmoothingEnabled = true;
+                        tCtx.imageSmoothingQuality = 'high';
+                    }
+                    
+                    tCtx.drawImage(img, box.x, box.y, box.w, box.h, 0, 0, tempCanvas.width, tempCanvas.height);
                     
                     const fileName = `${box.id}.png`;
                     

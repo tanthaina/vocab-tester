@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Smartphone Vocabulary Cards (35 Items)</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <style>
+    body {
+      font-family: 'Sarabun', 'Tahoma', sans-serif;
+      background-color: #f4f6f9;
+      padding: 20px;
+      margin: 0;
+    }
+    h1 {
+      text-align: center;
+      color: #2c3e50;
+      margin-bottom: 20px;
+    }
+    .grid-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 15px;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+    .card {
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 15px;
+      text-align: center;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .card-img {
+      width: 100px;
+      height: 100px;
+      object-fit: contain;
+      margin-bottom: 10px;
+      background-color: #f8fafc;
+      border-radius: 8px;
+    }
+    .word-en {
+      font-size: 1.1rem;
+      font-weight: bold;
+      color: #1e293b;
+    }
+    .word-th {
+      font-size: 0.9rem;
+      color: #64748b;
+      margin-top: 4px;
+    }
+    .btn-save {
+      margin-top: 10px;
+      padding: 6px 12px;
+      background-color: #2563eb;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.8rem;
+      transition: background 0.2s;
+    }
+    .btn-save:hover {
+      background-color: #1d4ed8;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Smartphone Vocabulary Flashcards (35 คำ)</h1>
+  <div class="grid-container" id="cardContainer"></div>
+
+  <script>
+    const vocabList = [
+      { en: "Ringtone", th: "เสียงเรียกเข้า" },
+      { en: "Earphones", th: "หูฟัง" },
+      { en: "Volume", th: "ระดับเสียง" },
+      { en: "Power button", th: "ปุ่มเปิด/ปิด" },
+      { en: "Airplane mode", th: "โหมดเครื่องบิน" },
+      { en: "Lock screen", th: "หน้าจอล็อก" },
+      { en: "Screen protector", th: "ฟิล์มกันรอยหน้าจอ" },
+      { en: "Touchscreen", th: "หน้าจอสัมผัส" },
+      { en: "Stylus", th: "ปากกาสไตลัส" },
+      { en: "Selfie", th: "การถ่ายภาพตัวเอง" },
+      { en: "Home button", th: "ปุ่มโฮม" },
+      { en: "Fingerprint sensor", th: "เซนเซอร์ลายนิ้วมือ" },
+      { en: "Video", th: "วิดีโอ" },
+      { en: "Mobile data", th: "อินเทอร์เน็ตมือถือ" },
+      { en: "Phone grip", th: "ที่จับมือถือ" },
+      { en: "Phone power button", th: "ปุ่มเปิด/ปิดโทรศัพท์" },
+      { en: "Volume button", th: "ปุ่มปรับเสียง" },
+      { en: "Selfie stick", th: "ไม้เซลฟี" },
+      { en: "Hotspot", th: "จุดแชร์อินเทอร์เน็ต" },
+      { en: "Signal bars", th: "สัญญาณคลื่น" },
+      { en: "Bluetooth", th: "บลูทูธ" },
+      { en: "Battery icon", th: "สัญลักษณ์แบต" },
+      { en: "Phone case", th: "เคสมือถือ" },
+      { en: "Flash", th: "แฟลช" },
+      { en: "Lens", th: "เลนส์" },
+      { en: "App", th: "แอป" },
+      { en: "Widget", th: "วิดเจ็ต" },
+      { en: "Charging port", th: "ช่องชาร์จ" },
+      { en: "Status bar", th: "แถบสถานะ" },
+      { en: "Front camera", th: "กล้องหน้า" },
+      { en: "Rear camera", th: "กล้องหลัง" },
+      { en: "Notification", th: "การแจ้งเตือน" },
+      { en: "SIM tray", th: "ถาดซิม" },
+      { en: "SIM card", th: "ซิม" },
+      { en: "Lanyard", th: "สายคล้องคอ" }
+    ];
+
+    const container = document.getElementById('cardContainer');
+
+    vocabList.forEach((item, index) => {
+      const card = document.createElement('div');
+      card.className = 'card';
+      card.id = `card-${index}`;
+
+      card.innerHTML = `
+        <div>
+          <!-- นำลิงก์รูปภาพของคุณมาใส่ใน src ด้านล่างนี้ได้ครับ -->
+          <img src="https://via.placeholder.com/100?text=${encodeURIComponent(item.en)}" class="card-img" alt="${item.en}">
+          <div class="word-en">${item.en}</div>
+          <div class="word-th">(${item.th})</div>
+        </div>
+        <button class="btn-save" onclick="saveCard('card-${index}', '${item.en}')">💾 บันทึกรูป</button>
+      `;
+
+      container.appendChild(card);
+    });
+
+    function saveCard(cardId, filename) {
+      const cardElement = document.getElementById(cardId);
+      const btn = cardElement.querySelector('.btn-save');
+
+      btn.style.visibility = 'hidden';
+
+      html2canvas(cardElement, { scale: 2 }).then(canvas => {
+        btn.style.visibility = 'visible';
+
+        const image = canvas.toDataURL("image/png");
+        const link = document.createElement('a');
+        link.href = image;
+        link.download = filename + '.png';
+        link.click();
+      });
+    }
+  </script>
+</body>
+</html>

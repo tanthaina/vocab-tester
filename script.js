@@ -65,57 +65,57 @@ function init() {
         option.innerText = `${categoriesData[key].emoji} ${categoriesData[key].name}`;
         categorySelect.appendChild(option);
     }
-    
+
     // Set initial category visually
     categorySelect.value = currentCategory;
-    
+
     if (!SpeechRecognition) {
         speechStatus.innerHTML = "⚠️ เบราว์เซอร์ของคุณไม่รองรับระบบฟังเสียง<br>โปรดใช้ Google Chrome หรือ Edge";
         micBtn.style.display = 'none';
     }
-    
+
     loadCategory(currentCategory);
 }
 
 function loadCategory(categoryId) {
     currentCategory = categoryId;
     const catData = categoriesData[categoryId];
-    
+
     // Update Header
     headerTitle.innerText = `${catData.emoji} Vocab Tester`;
     categoryDescription.innerText = catData.desc;
-    
+
     // Reset Deck and State
     currentDeck = [...catData.items];
     currentIndex = 0;
     isFlipped = false;
     accumulatedScore = 0;
     cardScores = new Array(currentDeck.length).fill(0);
-    
+
     flashcard.classList.remove('flipped');
     renderCard();
     updateUI();
-    
+
     // Check if we are in Worksheet mode and re-render
     if (typeof isWorksheetMode !== 'undefined' && isWorksheetMode) {
         renderWorksheet();
     }
-    
+
     // Check if we are in Teaching mode and re-render
     if (typeof isTeachingMode !== 'undefined' && isTeachingMode) {
         renderTeachingMode();
     }
-    
+
     // Check if we are in Game mode and re-render
     if (typeof isGameMode !== 'undefined' && isGameMode) {
         startNewGame();
     }
-    
+
     // Check if we are in Sentence mode and re-render
     if (typeof isSentenceMode !== 'undefined' && isSentenceMode) {
         renderSentenceCard();
     }
-    
+
     // Check if we are in Hangman mode and re-render
     if (typeof isHangmanMode !== 'undefined' && isHangmanMode) {
         renderHangmanCard();
@@ -135,12 +135,12 @@ function shuffleArray(array) {
 
 function renderCard() {
     if (currentDeck.length === 0) return;
-    
+
     const item = currentDeck[currentIndex];
     // Notice the updated image path: images/categoryID/item.id.png
     const imgPath = `images/${currentCategory}/${item.id}.png`;
     const imageHtml = `<img src="${imgPath}" alt="${item.en}" class="card-image" onerror="this.outerHTML='<div class=\\'empty-state\\'>⚠️ ไม่พบรูปภาพ<br><b>${imgPath}</b><br>โปรดนำไฟล์ไปวางให้ถูกตำแหน่ง</div>'">`;
-    
+
     const wordHtml = `
         <div style="display: flex; align-items: center; justify-content: center; gap: 15px;">
             <div class="card-word-en">${item.en}</div>
@@ -173,7 +173,7 @@ function renderCard() {
         flashcard.classList.remove('flipped');
         isFlipped = false;
     }
-    
+
     // Reset Speech UI for new card
     scoreBreakdown.style.display = 'none';
     speechStatus.innerText = "กดปุ่มไมค์แล้วพูดคำศัพท์ภาษาอังกฤษ";
@@ -183,7 +183,7 @@ function updateUI() {
     counterText.innerText = `${currentIndex + 1} / ${currentDeck.length}`;
     progressBar.style.width = `${((currentIndex + 1) / currentDeck.length) * 100}%`;
     totalScoreBadge.innerText = `⭐ รวม: ${accumulatedScore} คะแนน`;
-    
+
     prevBtn.disabled = currentIndex === 0;
     nextBtn.disabled = currentIndex === currentDeck.length - 1;
 }
@@ -240,21 +240,21 @@ function flipCard() {
 
 // Levenshtein distance for string matching fuzziness
 function getEditDistance(a, b) {
-    if(a.length == 0) return b.length; 
-    if(b.length == 0) return a.length; 
+    if (a.length == 0) return b.length;
+    if (b.length == 0) return a.length;
     var matrix = [];
-    for(var i = 0; i <= b.length; i++){
+    for (var i = 0; i <= b.length; i++) {
         matrix[i] = [i];
     }
-    for(var j = 0; j <= a.length; j++){
+    for (var j = 0; j <= a.length; j++) {
         matrix[0][j] = j;
     }
-    for(var i = 1; i <= b.length; i++){
-        for(var j = 1; j <= a.length; j++){
-            if(b.charAt(i-1) == a.charAt(j-1)){
-                matrix[i][j] = matrix[i-1][j-1];
+    for (var i = 1; i <= b.length; i++) {
+        for (var j = 1; j <= a.length; j++) {
+            if (b.charAt(i - 1) == a.charAt(j - 1)) {
+                matrix[i][j] = matrix[i - 1][j - 1];
             } else {
-                matrix[i][j] = Math.min(matrix[i-1][j-1] + 1, Math.min(matrix[i][j-1] + 1, matrix[i-1][j] + 1));
+                matrix[i][j] = Math.min(matrix[i - 1][j - 1] + 1, Math.min(matrix[i][j - 1] + 1, matrix[i - 1][j] + 1));
             }
         }
     }
@@ -263,16 +263,16 @@ function getEditDistance(a, b) {
 
 // Speech Recognition Handlers
 if (recognition) {
-    recognition.onstart = function() {
+    recognition.onstart = function () {
         isRecording = true;
         micBtn.classList.add('recording');
         speechStatus.innerText = "กำลังฟังเสียง... (พูดเลย)";
         scoreBreakdown.style.display = 'none';
     };
 
-    recognition.onresult = function(event) {
+    recognition.onresult = function (event) {
         let targetWord = currentDeck[currentIndex].en.toLowerCase().trim();
-        
+
         // Handle Sentence Mode override
         if (typeof isSentenceMode !== 'undefined' && isSentenceMode) {
             const templateSelect = document.getElementById('sentenceTemplateSelect');
@@ -282,14 +282,14 @@ if (recognition) {
                 targetWord = targetWord.replace(/[.,?]/g, '');
             }
         }
-        
+
         const lastResultIndex = event.results.length - 1;
         const transcriptRaw = event.results[lastResultIndex][0].transcript.toLowerCase().trim();
         const transcript = transcriptRaw.replace(/[.,?]/g, '');
         const confidence = event.results[lastResultIndex][0].confidence;
-        
+
         heardWord.innerText = transcriptRaw;
-        
+
         // 1. Correctness (2 points)
         let correctnessScore = 0;
         if (transcript.includes(targetWord)) {
@@ -324,24 +324,24 @@ if (recognition) {
         }
 
         const wordTotal = correctnessScore + accentScore + fluencyScore;
-        
+
         // Update accumulated score
         accumulatedScore = accumulatedScore - cardScores[currentIndex] + wordTotal;
         cardScores[currentIndex] = wordTotal;
-        
+
         // Update Breakdown UI
         scoreCorrect.innerText = `${correctnessScore}/2`;
         scoreAccent.innerText = `${accentScore}/2`;
         scoreFluency.innerText = `${fluencyScore}/1`;
         wordScoreTotal.innerText = wordTotal;
-        
+
         speechStatus.innerText = wordTotal >= 4 ? "ยอดเยี่ยมมาก! 🌟" : wordTotal > 0 ? "พยายามได้ดีครับ 👍" : "ลองพูดใหม่อีกครั้งนะ ✌️";
         scoreBreakdown.style.display = 'flex';
-        
+
         updateUI();
     };
 
-    recognition.onerror = function(event) {
+    recognition.onerror = function (event) {
         console.error("Speech error:", event.error);
         if (event.error === 'no-speech') {
             speechStatus.innerText = "ไม่ได้ยินเสียงเลย ลองกดพูดใหม่นะครับ";
@@ -350,7 +350,7 @@ if (recognition) {
         }
     };
 
-    recognition.onend = function() {
+    recognition.onend = function () {
         isRecording = false;
         micBtn.classList.remove('recording');
         if (speechStatus.innerText === "กำลังฟังเสียง... (พูดเลย)") {
@@ -386,7 +386,7 @@ if (fullscreenBtn) {
             fullscreenBtn.innerText = '⛶ เต็มจอ';
         }
     });
-    
+
     document.addEventListener('fullscreenchange', () => {
         if (!document.fullscreenElement) {
             fullscreenBtn.innerText = '⛶ เต็มจอ';
@@ -440,7 +440,7 @@ shuffleBtn.addEventListener('click', () => {
     flashcard.classList.remove('flipped');
     accumulatedScore = 0;
     cardScores.fill(0);
-    
+
     const svg = shuffleBtn.querySelector('svg');
     svg.style.transition = 'transform 0.5s ease';
     svg.style.transform = 'rotate(360deg)';
@@ -501,7 +501,7 @@ function clearAllModes() {
     if (typeof sentenceApp !== 'undefined') allApps.push(sentenceApp);
     if (typeof hangmanApp !== 'undefined') allApps.push(hangmanApp);
     allApps.forEach(app => app && (app.style.display = 'none'));
-    
+
     mainHeader.querySelector('h1').style.display = 'none';
     mainHeader.querySelector('p').style.display = 'none';
 }
@@ -519,7 +519,7 @@ function restoreMainUI() {
     flashcardApp.style.display = 'block';
     mainHeader.querySelector('h1').style.display = 'block';
     mainHeader.querySelector('p').style.display = 'block';
-    
+
     // Reset Speech UI
     scoreBreakdown.style.display = 'none';
     speechStatus.innerText = "กดปุ่มไมค์แล้วพูดคำศัพท์ภาษาอังกฤษ";
@@ -543,13 +543,13 @@ function renderWorksheet() {
 
     const catData = categoriesData[currentCategory];
     const allItems = [...catData.items];
-    
+
     // Sort words alphabetically
     const sortedWords = [...allItems].sort((a, b) => a.en.localeCompare(b.en));
-    
+
     // Shuffle images
     const shuffledItems = shuffleArray([...allItems]);
-    
+
     // 1. Build Words Box (Top section)
     const wordsBox = document.createElement('div');
     wordsBox.className = 'ws-words-box';
@@ -575,7 +575,7 @@ function renderWorksheet() {
 function createWsImageItem(item, displayNum) {
     const div = document.createElement('div');
     div.className = 'ws-image-item';
-    
+
     const imgPath = `images/${currentCategory}/${item.id}.png`;
     div.innerHTML = `
         <div class="ws-image-number">${displayNum}</div>
@@ -590,7 +590,7 @@ wsShuffleBtn.addEventListener('click', renderWorksheet);
 wsAnswerBtn.addEventListener('click', () => {
     wsAnswersRevealed = !wsAnswersRevealed;
     const overlays = document.querySelectorAll('.ws-answer-overlay');
-    
+
     overlays.forEach(overlay => {
         if (wsAnswersRevealed) {
             overlay.classList.add('show');
@@ -628,13 +628,13 @@ function renderTeachingMode() {
     teachingGrid.innerHTML = '';
     const catData = categoriesData[currentCategory];
     const allItems = [...catData.items];
-    
+
     allItems.forEach((item, index) => {
         const card = document.createElement('div');
         card.className = 'teaching-card';
-        
+
         const imgPath = `images/${currentCategory}/${item.id}.png`;
-        
+
         card.innerHTML = `
             <div class="tc-number">${index + 1}</div>
             <div class="tc-speaker" onclick="speakWord('${item.en.replace(/'/g, "\\'")}')" title="ฟังเสียงอ่าน">
@@ -671,23 +671,23 @@ function speakWord(text) {
     if ('speechSynthesis' in window) {
         // Cancel any ongoing speech
         window.speechSynthesis.cancel();
-        
+
         const utterance = new SpeechSynthesisUtterance(text);
         utterance.lang = 'en-US';
         utterance.rate = 0.9; // slightly slower for students
-        
+
         let voices = window.speechSynthesis.getVoices();
         if (voices.length === 0 && typeof globalVoices !== 'undefined') voices = globalVoices;
-        
+
         let enVoice = voices.find(v => v.lang.startsWith('en') && (v.name.includes('Google') || v.name.includes('Siri') || v.name.includes('Samantha')));
         if (!enVoice) enVoice = voices.find(v => v.lang.startsWith('en'));
-        
+
         if (enVoice) {
             utterance.voice = enVoice;
         } else {
             utterance.lang = 'en-US';
         }
-        
+
         window.speechSynthesis.speak(utterance);
     } else {
         alert("ขออภัย เบราว์เซอร์ของคุณไม่รองรับระบบอ่านออกเสียง");
@@ -723,30 +723,30 @@ function startNewGame() {
     gameMoves = 0;
     lockBoard = false;
     gameMovesText.innerText = '0';
-    
+
     const catData = categoriesData[currentCategory];
     const allItems = [...catData.items];
-    
+
     // Pick 6 random items from the category
     shuffleArray(allItems);
     const selectedItems = allItems.slice(0, 6);
-    
+
     // Create 12 cards: 6 images, 6 words
     gameCards = [];
     selectedItems.forEach(item => {
         gameCards.push({ type: 'image', data: item });
         gameCards.push({ type: 'word', data: item });
     });
-    
+
     // Shuffle the 12 cards
     shuffleArray(gameCards);
-    
+
     // Render the grid
     gameCards.forEach((card, index) => {
         const cardElement = document.createElement('div');
         cardElement.className = 'game-card';
         cardElement.dataset.id = card.data.id; // to match pairs
-        
+
         let backContent = '';
         if (card.type === 'image') {
             const imgPath = `images/${currentCategory}/${card.data.id}.png`;
@@ -754,14 +754,14 @@ function startNewGame() {
         } else {
             backContent = `<div class="game-card-text">${card.data.en}</div>`;
         }
-        
+
         cardElement.innerHTML = `
             <div class="game-card-inner">
                 <div class="game-card-front">${index + 1}</div>
                 <div class="game-card-back">${backContent}</div>
             </div>
         `;
-        
+
         cardElement.addEventListener('click', () => flipGameCard(cardElement));
         gameGrid.appendChild(cardElement);
     });
@@ -770,10 +770,10 @@ function startNewGame() {
 function flipGameCard(cardElement) {
     if (lockBoard) return;
     if (cardElement.classList.contains('flipped') || cardElement.classList.contains('matched')) return;
-    
+
     cardElement.classList.add('flipped');
     flippedCards.push(cardElement);
-    
+
     if (flippedCards.length === 2) {
         lockBoard = true;
         gameMoves++;
@@ -784,7 +784,7 @@ function flipGameCard(cardElement) {
 
 function checkForMatch() {
     const isMatch = flippedCards[0].dataset.id === flippedCards[1].dataset.id;
-    
+
     if (isMatch) {
         disableCards();
     } else {
@@ -797,14 +797,14 @@ function disableCards() {
     setTimeout(() => {
         flippedCards[0].classList.add('matched');
         flippedCards[1].classList.add('matched');
-        
+
         matchedPairs++;
         if (matchedPairs === 6) {
             setTimeout(() => {
                 alert(`ยอดเยี่ยม! 🎊\\nคุณเคลียร์กระดานได้ใน ${gameMoves} ครั้ง!`);
             }, 500);
         }
-        
+
         flippedCards = [];
         lockBoard = false;
     }, 500);
@@ -823,7 +823,7 @@ gameRestartBtn.addEventListener('click', startNewGame);
 
 // Update restoreMainUI to handle game mode
 const originalRestoreMainUI2 = restoreMainUI;
-restoreMainUI = function() {
+restoreMainUI = function () {
     isGameMode = false;
     gameApp.style.display = 'none';
     originalRestoreMainUI2();
@@ -848,13 +848,13 @@ if (modeSentenceBtn) {
         isSentenceMode = true;
         modeSentenceBtn.classList.add('active');
         sentenceApp.style.display = 'block';
-        
+
         // Move speech container to sentence mode
         const speechContainer = document.getElementById('speechContainer');
         if (speechContainer) {
             sentenceSpeechPlaceholder.appendChild(speechContainer);
         }
-        
+
         renderSentenceCard();
     });
 }
@@ -862,12 +862,12 @@ if (modeSentenceBtn) {
 function renderSentenceCard() {
     const item = currentDeck[currentIndex];
     const template = sentenceTemplateSelect.value;
-    
+
     const imgPath = `images/${currentCategory}/${item.id}.png`;
-    
+
     let sentenceHTML = '';
     const parts = template.split('{word}');
-    
+
     if (sentenceRevealed) {
         sentenceHTML = `
             ${parts[0]}<span class="sentence-blank revealed">${item.en}</span>${parts[1] || ''}
@@ -879,16 +879,16 @@ function renderSentenceCard() {
             <div style="font-size: 1.2rem; color: var(--text-muted); margin-top: 10px;">( คำแปล: ${item.th} )</div>
         `;
     }
-    
+
     sentenceCardFront.innerHTML = `
         <img src="${imgPath}" class="sentence-image" alt="${item.en}">
         <div class="sentence-text">${sentenceHTML}</div>
     `;
-    
+
     // Update navigation states
     sPrevBtn.disabled = currentIndex === 0;
     sNextBtn.disabled = currentIndex === currentDeck.length - 1;
-    
+
     // Reset Speech UI
     const scoreBreakdown = document.getElementById('scoreBreakdown');
     const speechStatus = document.getElementById('speechStatus');
@@ -932,21 +932,21 @@ if (sRevealBtn) {
 
 // Update restoreMainUI to handle sentence mode
 const originalRestoreMainUI3 = restoreMainUI;
-restoreMainUI = function() {
+restoreMainUI = function () {
     isSentenceMode = false;
     sentenceApp.style.display = 'none';
-    
+
     // Put speech container back to flashcard mode
     const speechContainer = document.getElementById('speechContainer');
     const flashcardSideArea = document.querySelector('.flashcard-side-area');
-    
+
     if (speechContainer && flashcardSideArea) {
         flashcardSideArea.appendChild(speechContainer);
     } else if (speechContainer) {
         const flashcardApp = document.getElementById('flashcardApp');
         if (flashcardApp) flashcardApp.appendChild(speechContainer);
     }
-    
+
     originalRestoreMainUI3();
 };
 
@@ -955,23 +955,23 @@ function speakWord(text) {
     if ('speechSynthesis' in window) {
         // Cancel any ongoing speech
         window.speechSynthesis.cancel();
-        
+
         const utterance = new SpeechSynthesisUtterance(text);
         utterance.lang = 'en-US';
         utterance.rate = 0.9; // Slightly slower for clearer pronunciation
-        
+
         let voices = window.speechSynthesis.getVoices();
         if (voices.length === 0 && typeof globalVoices !== 'undefined') voices = globalVoices;
-        
+
         let enVoice = voices.find(v => v.lang.startsWith('en') && (v.name.includes('Google') || v.name.includes('Siri') || v.name.includes('Samantha')));
         if (!enVoice) enVoice = voices.find(v => v.lang.startsWith('en'));
-        
+
         if (enVoice) {
             utterance.voice = enVoice;
         } else {
             utterance.lang = 'en-US';
         }
-        
+
         window.speechSynthesis.speak(utterance);
     } else {
         alert('เบราว์เซอร์ของคุณไม่รองรับระบบอ่านออกเสียงครับ');
@@ -980,7 +980,7 @@ function speakWord(text) {
 
 // Load voices proactively
 if ('speechSynthesis' in window) {
-    window.speechSynthesis.onvoiceschanged = function() {
+    window.speechSynthesis.onvoiceschanged = function () {
         window.speechSynthesis.getVoices();
     };
 }
@@ -1016,7 +1016,7 @@ if (modeHangmanBtn) {
         prevCard(); // Updates currentIndex
         if (isHangmanMode) renderHangmanCard();
     });
-    
+
     hmNextBtn.addEventListener('click', () => {
         nextCard(); // Updates currentIndex
         if (isHangmanMode) renderHangmanCard();
@@ -1038,7 +1038,7 @@ if (modeHangmanBtn) {
     // Keyboard support
     document.addEventListener('keydown', (e) => {
         if (!isHangmanMode || hmGameOver) return;
-        
+
         // Handle A-Z
         if (e.keyCode >= 65 && e.keyCode <= 90) {
             const letter = String.fromCharCode(e.keyCode).toLowerCase();
@@ -1049,21 +1049,21 @@ if (modeHangmanBtn) {
 
 function renderHangmanCard() {
     if (currentDeck.length === 0) return;
-    
+
     hmGameOver = false;
     hmHeartsCount = 5;
     hmGuessed.clear();
     hmResult.innerText = '';
     updateHangmanHearts();
-    
+
     const item = currentDeck[currentIndex];
     hmWord = item.en.toLowerCase();
-    
+
     hmImage.src = `images/${currentCategory}/${item.id}.png`;
-    hmImage.onerror = function() {
+    hmImage.onerror = function () {
         this.src = `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='300' height='300'><rect width='300' height='300' fill='%23eee'/><text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle' font-size='20'>No Image</text></svg>`;
     };
-    
+
     renderHangmanWord();
     renderHangmanKeyboard();
 }
@@ -1075,7 +1075,7 @@ function updateHangmanHearts() {
 function renderHangmanWord() {
     hmWordContainer.innerHTML = '';
     let allRevealed = true;
-    
+
     for (let char of hmWord) {
         if (char === ' ' || char === '-' || char === "'") {
             const box = document.createElement('div');
@@ -1097,7 +1097,7 @@ function renderHangmanWord() {
             hmWordContainer.appendChild(box);
         }
     }
-    
+
     if (allRevealed && hmWord.length > 0 && !hmGameOver) {
         hmGameOver = true;
         hmResult.innerText = '🎉 ถูกต้องเก่งมาก!';
@@ -1109,12 +1109,12 @@ function renderHangmanWord() {
 function renderHangmanKeyboard() {
     hmKeyboard.innerHTML = '';
     const letters = 'abcdefghijklmnopqrstuvwxyz'.split('');
-    
+
     letters.forEach(letter => {
         const btn = document.createElement('button');
         btn.className = 'hm-key';
         btn.innerText = letter;
-        
+
         if (hmGuessed.has(letter)) {
             btn.disabled = true;
             if (hmWord.includes(letter)) {
@@ -1123,29 +1123,29 @@ function renderHangmanKeyboard() {
                 btn.classList.add('wrong');
             }
         }
-        
+
         btn.addEventListener('click', () => {
             guessHangmanLetter(letter);
         });
-        
+
         hmKeyboard.appendChild(btn);
     });
 }
 
 function guessHangmanLetter(letter) {
     if (hmGameOver || hmGuessed.has(letter)) return;
-    
+
     hmGuessed.add(letter);
-    
+
     if (!hmWord.includes(letter)) {
         hmHeartsCount--;
         updateHangmanHearts();
-        
+
         if (hmHeartsCount <= 0) {
             hmGameOver = true;
             hmResult.innerText = '💔 เสียใจด้วย คำตอบคือ: ' + currentDeck[currentIndex].en;
             hmResult.style.color = '#EF4444';
-            
+
             // Auto reveal all letters
             for (let char of hmWord) {
                 if (/[a-z]/.test(char)) hmGuessed.add(char);
@@ -1156,7 +1156,7 @@ function guessHangmanLetter(letter) {
             return;
         }
     }
-    
+
     renderHangmanWord();
     renderHangmanKeyboard();
 }
