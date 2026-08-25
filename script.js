@@ -30,6 +30,9 @@ if (SpeechRecognition) {
 
 // DOM Elements
 const categorySelect = document.getElementById('categorySelect');
+const chunkSelect = document.getElementById('chunkSelect');
+const chunkRangeSelect = document.getElementById('chunkRangeSelect');
+const chunkRangeLabel = document.getElementById('chunkRangeLabel');
 const categoryDescription = document.getElementById('categoryDescription');
 const headerTitle = document.querySelector('header h1');
 const modeImageBtn = document.getElementById('modeImageBtn');
@@ -77,6 +80,61 @@ function init() {
     loadCategory(currentCategory);
 }
 
+function updateChunkRanges() {
+    if (!chunkSelect || !chunkRangeSelect) return;
+
+    if (chunkSelect.value === 'all') {
+        chunkRangeSelect.style.display = 'none';
+        chunkRangeLabel.style.display = 'none';
+    } else {
+        chunkRangeSelect.style.display = 'inline-block';
+        chunkRangeLabel.style.display = 'inline-block';
+        
+        const size = parseInt(chunkSelect.value);
+        const totalItems = categoriesData[currentCategory].items.length;
+        const numChunks = Math.ceil(totalItems / size);
+        
+        // Remember current selection to try and restore it if possible
+        const currentVal = chunkRangeSelect.value;
+        
+        chunkRangeSelect.innerHTML = '';
+        for (let i = 0; i < numChunks; i++) {
+            const start = i * size + 1;
+            const end = Math.min((i + 1) * size, totalItems);
+            const option = document.createElement('option');
+            option.value = i;
+            option.innerText = `${start} - ${end}`;
+            chunkRangeSelect.appendChild(option);
+        }
+        
+        // Restore if still valid, otherwise it defaults to 0
+        if (currentVal && parseInt(currentVal) < numChunks) {
+            chunkRangeSelect.value = currentVal;
+        }
+    }
+}
+
+function applyDeckFilter() {
+    const catData = categoriesData[currentCategory];
+    let allItems = [...catData.items];
+
+    const chunkSize = chunkSelect.value;
+    if (chunkSize !== 'all') {
+        const size = parseInt(chunkSize);
+        const rangeIndex = parseInt(chunkRangeSelect.value) || 0;
+        
+        const startIndex = rangeIndex * size;
+        const endIndex = startIndex + size;
+        allItems = allItems.slice(startIndex, endIndex);
+    }
+
+    currentDeck = allItems;
+    currentIndex = 0;
+    isFlipped = false;
+    accumulatedScore = 0;
+    cardScores = new Array(currentDeck.length).fill(0);
+}
+
 function loadCategory(categoryId) {
     currentCategory = categoryId;
     const catData = categoriesData[categoryId];
@@ -85,12 +143,9 @@ function loadCategory(categoryId) {
     headerTitle.innerText = `${catData.emoji} Vocab Tester`;
     categoryDescription.innerText = catData.desc;
 
-    // Reset Deck and State
-    currentDeck = [...catData.items];
-    currentIndex = 0;
-    isFlipped = false;
-    accumulatedScore = 0;
-    cardScores = new Array(currentDeck.length).fill(0);
+    // Filter Deck and reset state
+    updateChunkRanges();
+    applyDeckFilter();
 
     flashcard.classList.remove('flipped');
     renderCard();
@@ -372,6 +427,18 @@ categorySelect.addEventListener('change', (e) => {
     loadCategory(e.target.value);
 });
 
+if (chunkSelect) {
+    chunkSelect.addEventListener('change', () => {
+        loadCategory(currentCategory);
+    });
+}
+
+if (chunkRangeSelect) {
+    chunkRangeSelect.addEventListener('change', () => {
+        loadCategory(currentCategory);
+    });
+}
+
 // Fullscreen Logic
 const fullscreenBtn = document.getElementById('fullscreenBtn');
 if (fullscreenBtn) {
@@ -541,8 +608,7 @@ function renderWorksheet() {
     wsAnswerBtn.classList.remove('btn-danger');
     wsAnswerBtn.classList.add('btn-primary');
 
-    const catData = categoriesData[currentCategory];
-    const allItems = [...catData.items];
+    const allItems = [...currentDeck];
 
     // Sort words alphabetically
     const sortedWords = [...allItems].sort((a, b) => a.en.localeCompare(b.en));
@@ -626,8 +692,7 @@ modeTeachingBtn.addEventListener('click', () => {
 
 function renderTeachingMode() {
     teachingGrid.innerHTML = '';
-    const catData = categoriesData[currentCategory];
-    const allItems = [...catData.items];
+    const allItems = [...currentDeck];
 
     allItems.forEach((item, index) => {
         const card = document.createElement('div');
@@ -724,8 +789,7 @@ function startNewGame() {
     lockBoard = false;
     gameMovesText.innerText = '0';
 
-    const catData = categoriesData[currentCategory];
-    const allItems = [...catData.items];
+    const allItems = [...currentDeck];
 
     // Pick 6 random items from the category
     shuffleArray(allItems);

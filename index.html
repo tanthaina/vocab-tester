@@ -18,6 +18,21 @@
                 <select id="categorySelect" style="padding: 10px; font-size: 1.1rem; border-radius: 8px; border: 2px solid #E5E7EB; background: white; cursor: pointer; min-width: 200px; font-family: inherit;">
                     <!-- Injected via JS -->
                 </select>
+
+                <label for="chunkSelect" style="font-weight: bold; color: var(--text-main); margin-left: 10px;">จำนวน:</label>
+                <select id="chunkSelect" style="padding: 10px; font-size: 1.1rem; border-radius: 8px; border: 2px solid #E5E7EB; background: white; cursor: pointer; font-family: inherit;">
+                    <option value="all">ทั้งหมด</option>
+                    <option value="5">ทีละ 5 คำ</option>
+                    <option value="10">ทีละ 10 คำ</option>
+                    <option value="15">ทีละ 15 คำ</option>
+                    <option value="20">ทีละ 20 คำ</option>
+                </select>
+
+                <label id="chunkRangeLabel" for="chunkRangeSelect" style="font-weight: bold; color: var(--text-main); margin-left: 10px; display: none;">ข้อที่:</label>
+                <select id="chunkRangeSelect" style="padding: 10px; font-size: 1.1rem; border-radius: 8px; border: 2px solid #E5E7EB; background: white; cursor: pointer; font-family: inherit; display: none;">
+                    <!-- Injected via JS -->
+                </select>
+
                 <button class="btn btn-secondary" id="showQrBtn" title="แสดง QR Code">📱 QR Code</button>
                 <button class="btn btn-secondary" id="fullscreenBtn" title="สลับเต็มจอ">⛶ เต็มจอ</button>
             </div>
