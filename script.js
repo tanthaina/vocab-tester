@@ -8,7 +8,8 @@ if ('speechSynthesis' in window) {
 }
 
 let currentCategory = "vegetables";
-let currentDeck = [...categoriesData[currentCategory].items];
+let baseDeck = [...categoriesData[currentCategory].items];
+let currentDeck = [...baseDeck];
 let currentIndex = 0;
 let isImageMode = true;
 let isFlipped = false;
@@ -128,7 +129,8 @@ function applyDeckFilter() {
         allItems = allItems.slice(startIndex, endIndex);
     }
 
-    currentDeck = allItems;
+    baseDeck = allItems;
+    currentDeck = [...baseDeck];
     currentIndex = 0;
     isFlipped = false;
     accumulatedScore = 0;
@@ -608,7 +610,7 @@ function renderWorksheet() {
     wsAnswerBtn.classList.remove('btn-danger');
     wsAnswerBtn.classList.add('btn-primary');
 
-    const allItems = [...currentDeck];
+    const allItems = [...baseDeck];
 
     // Sort words alphabetically
     const sortedWords = [...allItems].sort((a, b) => a.en.localeCompare(b.en));
@@ -692,7 +694,7 @@ modeTeachingBtn.addEventListener('click', () => {
 
 function renderTeachingMode() {
     teachingGrid.innerHTML = '';
-    const allItems = [...currentDeck];
+    const allItems = [...baseDeck];
 
     allItems.forEach((item, index) => {
         const card = document.createElement('div');
@@ -789,7 +791,7 @@ function startNewGame() {
     lockBoard = false;
     gameMovesText.innerText = '0';
 
-    const allItems = [...currentDeck];
+    const allItems = [...baseDeck];
 
     // Pick 6 random items from the category
     shuffleArray(allItems);
@@ -909,6 +911,8 @@ let sentenceRevealed = false;
 if (modeSentenceBtn) {
     modeSentenceBtn.addEventListener('click', () => {
         clearAllModes();
+        currentDeck = [...baseDeck];
+        currentIndex = 0;
         isSentenceMode = true;
         modeSentenceBtn.classList.add('active');
         sentenceApp.style.display = 'block';
@@ -1070,6 +1074,8 @@ let hmGameOver = false;
 if (modeHangmanBtn) {
     modeHangmanBtn.addEventListener('click', () => {
         clearAllModes();
+        currentDeck = [...baseDeck];
+        currentIndex = 0;
         isHangmanMode = true;
         modeHangmanBtn.classList.add('active');
         hangmanApp.style.display = 'block';
